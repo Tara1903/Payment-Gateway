@@ -20,3 +20,6 @@
 -keep class * extends androidx.work.ListenableWorker {
     public <init>(...);
 }
+
+# Tink Crypto Dependency Rules
+-dontwarn com.google.errorprone.annotations.**

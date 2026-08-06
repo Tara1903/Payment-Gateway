@@ -162,6 +162,14 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
             }
 
             item {
+                MerchantDetailsCard(
+                    merchant = state.merchant,
+                    isLoading = state.isMerchantLoading,
+                    onEditClicked = { viewModel.onEvent(DashboardEvent.OnToggleMerchantDialog) }
+                )
+            }
+
+            item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -197,6 +205,17 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
             item {
                 Spacer(modifier = Modifier.height(24.dp))
             }
+        }
+        
+        if (state.showMerchantDialog) {
+            EditMerchantDialog(
+                merchant = state.merchant,
+                isLoading = state.isMerchantLoading,
+                onDismiss = { viewModel.onEvent(DashboardEvent.OnToggleMerchantDialog) },
+                onSave = { upiId, bankAccount, bankIfsc ->
+                    viewModel.onEvent(DashboardEvent.OnUpdateMerchant(upiId, bankAccount, bankIfsc))
+                }
+            )
         }
     }
 }

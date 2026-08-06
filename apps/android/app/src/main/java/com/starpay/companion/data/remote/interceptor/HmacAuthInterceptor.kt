@@ -25,10 +25,10 @@ class HmacAuthInterceptor @Inject constructor(
         originalRequest.body?.writeTo(bodyBuffer)
         val requestBodyString = bodyBuffer.readUtf8()
 
-        val signatureData = if (requestBodyString.isNotBlank()) {
-            "$timestamp:$requestBodyString"
+        val signatureData = if (requestBodyString.isNotEmpty()) {
+            "$timestamp.$requestBodyString"
         } else {
-            timestamp
+            "$timestamp."
         }
 
         val signature = HmacUtils.calculateHmacSha256(signatureData, secret)

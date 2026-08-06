@@ -3,6 +3,8 @@ package com.starpay.companion.feature.dashboard
 import androidx.lifecycle.viewModelScope
 import com.starpay.companion.core.permission.PermissionChecker
 import com.starpay.companion.core.presentation.BaseViewModel
+import com.starpay.companion.data.remote.api.StarPayApi
+import com.starpay.companion.data.remote.model.MerchantDto
 import com.starpay.companion.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -12,12 +14,14 @@ import javax.inject.Inject
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
-    private val permissionChecker: PermissionChecker
+    private val permissionChecker: PermissionChecker,
+    private val starPayApi: StarPayApi
 ) : BaseViewModel<DashboardState, DashboardEvent, DashboardEffect>(initialState = DashboardState()) {
 
     init {
         observeTransactions()
         checkPermissions()
+        onEvent(DashboardEvent.OnFetchMerchant)
     }
 
     private fun observeTransactions() {
@@ -47,6 +51,47 @@ class DashboardViewModel @Inject constructor(
             }
             is DashboardEvent.OnOpenBatterySettingsClicked -> {
                 setEffect { DashboardEffect.OpenBatteryOptimizationSettings }
+            }
+            is DashboardEvent.OnFetchMerchant -> fetchMerchant()
+            is DashboardEvent.OnToggleMerchantDialog -> {
+                setState { copy(showMerchantDialog = !showMerchantDialog) }
+            }
+            is DashboardEvent.OnUpdateMerchant -> updateMerchant(event.upiId, event.bankAccount, event.bankIfsc)
+        }
+    }
+
+    private fun fetchMerchant() {
+        viewModelScope.launch {
+            setState { copy(isMerchantLoading = true) }
+            try {
+                val response = starPayApi.getMerchantDetails()
+                if (response.isSuccessful && response.body()?.success == true) {
+                    setState { copy(merchant = response.body()?.data, isMerchantLoading = false) }
+                } else {
+                    setState { copy(isMerchantLoading = false) }
+                }
+            } catch (e: Exception) {
+                setState { copy(isMerchantLoading = false) }
+            }
+        }
+    }
+
+    private fun updateMerchant(upiId: String, bankAccount: String, bankIfsc: String) {
+        viewModelScope.launch {
+            setState { copy(isMerchantLoading = true) }
+            try {
+                val dto = MerchantDto(upi_id = upiId, bank_account = bankAccount, bank_ifsc = bankIfsc)
+                val response = starPayApi.updateMerchantDetails(dto)
+                if (response.isSuccessful && response.body()?.success == true) {
+                    setState { copy(merchant = response.body()?.data, isMerchantLoading = false, showMerchantDialog = false) }
+                    setEffect { DashboardEffect.ShowToast("Merchant details updated") }
+                } else {
+                    setState { copy(isMerchantLoading = false) }
+                    setEffect { DashboardEffect.ShowToast("Failed to update merchant") }
+                }
+            } catch (e: Exception) {
+                setState { copy(isMerchantLoading = false) }
+                setEffect { DashboardEffect.ShowToast("Network error updating merchant") }
             }
         }
     }
