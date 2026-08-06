@@ -146,6 +146,45 @@ export default function SettingsPage() {
           </div>
         </form>
       </div>
+
+      {/* Android App Download */}
+      <div className="mt-8">
+        <h2 className="text-lg font-bold text-slate-100 mb-4">Android Companion App</h2>
+        <div className="card p-6">
+          <div className="flex items-start gap-5">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg, rgb(16 185 129), rgb(5 150 105))' }}
+            >
+              <span className="text-2xl">📱</span>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-slate-100">StarPay Companion</h3>
+              <p className="text-sm text-slate-400 mt-1 leading-relaxed">
+                Install this app on your merchant Android phone. It intercepts bank SMS and payment notifications and instantly forwards them to your payment gateway for automatic verification.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <a
+                  href="/starpay-companion.apk"
+                  download="starpay-companion.apk"
+                  className="btn-primary flex items-center gap-2 no-underline"
+                  style={{ display: 'inline-flex' }}
+                >
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download APK
+                </a>
+              </div>
+              <div className="mt-4 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
+                <p className="text-xs text-amber-400 leading-relaxed">
+                  <strong>Installation tip:</strong> On your Android phone, go to <strong>Settings → Security → Install Unknown Apps</strong> and allow installs from your browser or file manager before opening the APK.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
