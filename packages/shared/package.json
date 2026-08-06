@@ -16,10 +16,12 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "zod": "^3.25.76",
-    "@starpay/types": "workspace:*"
+    "@starpay/types": "workspace:*",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@starpay/config": "workspace:^",
+    "@types/node": "^22.15.29",
     "typescript": "^5.8.3"
   }
 }

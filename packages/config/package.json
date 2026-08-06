@@ -4,7 +4,9 @@
   "private": true,
   "exports": {
     "./typescript/base": "./typescript/base.json",
+    "./typescript/base.json": "./typescript/base.json",
     "./typescript/nextjs": "./typescript/nextjs.json",
+    "./typescript/nextjs.json": "./typescript/nextjs.json",
     "./eslint": "./eslint/index.mjs"
   }
 }

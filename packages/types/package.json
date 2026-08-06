@@ -16,6 +16,7 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
+    "@starpay/config": "workspace:^",
     "typescript": "^5.8.3"
   }
 }

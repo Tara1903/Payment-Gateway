@@ -123,12 +123,21 @@ importers:
         specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
+      '@starpay/config':
+        specifier: workspace:^
+        version: link:../config
+      '@types/node':
+        specifier: ^22.15.29
+        version: 22.20.1
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
 
   packages/types:
     devDependencies:
+      '@starpay/config':
+        specifier: workspace:^
+        version: link:../config
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
@@ -142,6 +151,9 @@ importers:
         specifier: ^19.0.0
         version: 19.2.8(react@19.2.8)
     devDependencies:
+      '@starpay/config':
+        specifier: workspace:^
+        version: link:../config
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.17

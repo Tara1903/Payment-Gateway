@@ -1,5 +1,5 @@
 {
-  "extends": "@starpay/config/typescript/base",
+  "extends": "@starpay/config/typescript/base.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src"
