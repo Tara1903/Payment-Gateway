@@ -1,0 +1,7 @@
+{
+  "extends": "@starpay/config/typescript/nextjs",
+  "compilerOptions": {
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

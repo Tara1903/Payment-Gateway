@@ -1,0 +1,7 @@
+{
+  "extends": "@starpay/config/typescript/base",
+  "compilerOptions": {
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*.ts"]
+}

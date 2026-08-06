@@ -1,0 +1,11 @@
+{
+  "name": "@starpay/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "StarPay JavaScript SDK — stub for future merchant integrations",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

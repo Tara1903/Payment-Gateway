@@ -1,0 +1,31 @@
+build:
+  maxIssues: 0
+
+naming:
+  FunctionNaming:
+    active: true
+    ignoreAnnotated: ['Composable']
+  MatchingDeclarationName:
+    active: false
+
+style:
+  MagicNumber:
+    active: false
+  MaxLineLength:
+    active: false
+  UnusedPrivateProperty:
+    active: false
+  FunctionOnlyReturningConstant:
+    active: false
+
+empty-blocks:
+  EmptyFunctionBlock:
+    active: false
+
+complexity:
+  TooManyFunctions:
+    active: false
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
