@@ -245,14 +245,6 @@ fun HealthStatusCard(
             )
 
             ServiceStatusRow(
-                title = "SMS Capture Service",
-                isOk = state.isSmsPermissionGranted,
-                okText = "Active",
-                warningText = "Permission Missing",
-                onClick = {}
-            )
-
-            ServiceStatusRow(
                 title = "Notification Listener",
                 isOk = state.isNotificationListenerGranted,
                 okText = "Connected",

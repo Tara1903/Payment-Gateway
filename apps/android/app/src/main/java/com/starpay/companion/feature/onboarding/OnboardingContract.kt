@@ -1,13 +1,11 @@
 package com.starpay.companion.feature.onboarding
 
 data class OnboardingState(
-    val isSmsGranted: Boolean = false,
     val isNotificationGranted: Boolean = false,
     val isBatteryIgnored: Boolean = false
 )
 
 sealed interface OnboardingEvent {
-    object OnGrantSmsClicked : OnboardingEvent
     object OnGrantNotificationClicked : OnboardingEvent
     object OnGrantBatteryClicked : OnboardingEvent
     object OnFinishOnboardingClicked : OnboardingEvent
@@ -15,7 +13,6 @@ sealed interface OnboardingEvent {
 }
 
 sealed interface OnboardingEffect {
-    object RequestSmsPermissions : OnboardingEffect
     object OpenNotificationSettings : OnboardingEffect
     object OpenBatterySettings : OnboardingEffect
     object NavigateToDashboard : OnboardingEffect

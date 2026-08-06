@@ -5,7 +5,6 @@ import com.starpay.companion.data.remote.model.MerchantDto
 
 data class DashboardState(
     val transactions: List<Transaction> = emptyList(),
-    val isSmsPermissionGranted: Boolean = false,
     val isNotificationListenerGranted: Boolean = false,
     val isBatteryOptimizationIgnored: Boolean = false,
     val isSyncing: Boolean = false,

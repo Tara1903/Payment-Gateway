@@ -17,7 +17,6 @@ class OnboardingViewModel @Inject constructor(
     fun checkPermissions() {
         setState {
             copy(
-                isSmsGranted = permissionChecker.isSmsPermissionGranted(),
                 isNotificationGranted = permissionChecker.isNotificationListenerGranted(),
                 isBatteryIgnored = permissionChecker.isBatteryOptimizationIgnored()
             )
@@ -26,7 +25,6 @@ class OnboardingViewModel @Inject constructor(
 
     override fun onEvent(event: OnboardingEvent) {
         when (event) {
-            is OnboardingEvent.OnGrantSmsClicked -> setEffect { OnboardingEffect.RequestSmsPermissions }
             is OnboardingEvent.OnGrantNotificationClicked -> setEffect { OnboardingEffect.OpenNotificationSettings }
             is OnboardingEvent.OnGrantBatteryClicked -> setEffect { OnboardingEffect.OpenBatterySettings }
             is OnboardingEvent.OnFinishOnboardingClicked -> setEffect { OnboardingEffect.NavigateToDashboard }

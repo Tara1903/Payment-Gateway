@@ -16,17 +16,7 @@ class PermissionChecker @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
 
-    fun isSmsPermissionGranted(): Boolean {
-        val receiveSms = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.RECEIVE_SMS
-        ) == PackageManager.PERMISSION_GRANTED
 
-        val readSms = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.READ_SMS
-        ) == PackageManager.PERMISSION_GRANTED
-
-        return receiveSms && readSms
-    }
 
     fun isNotificationListenerGranted(): Boolean {
         val enabledPackages = NotificationManagerCompat.getEnabledListenerPackages(context)

@@ -35,7 +35,6 @@ class DashboardViewModel @Inject constructor(
     fun checkPermissions() {
         setState {
             copy(
-                isSmsPermissionGranted = permissionChecker.isSmsPermissionGranted(),
                 isNotificationListenerGranted = permissionChecker.isNotificationListenerGranted(),
                 isBatteryOptimizationIgnored = permissionChecker.isBatteryOptimizationIgnored()
             )

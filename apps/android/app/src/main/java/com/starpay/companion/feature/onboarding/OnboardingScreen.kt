@@ -56,11 +56,7 @@ fun OnboardingScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val smsPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) {
-        viewModel.onEvent(OnboardingEvent.OnRefreshStatus)
-    }
+
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -77,14 +73,6 @@ fun OnboardingScreen(
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
-                is OnboardingEffect.RequestSmsPermissions -> {
-                    smsPermissionLauncher.launch(
-                        arrayOf(
-                            Manifest.permission.RECEIVE_SMS,
-                            Manifest.permission.READ_SMS
-                        )
-                    )
-                }
                 is OnboardingEffect.OpenNotificationSettings -> {
                     val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
                     context.startActivity(intent)
@@ -147,15 +135,7 @@ fun OnboardingScreen(
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                PermissionStepCard(
-                    stepNumber = "1",
-                    title = "SMS Capture Permission",
-                    description = "Required to capture instant bank credit SMS messages.",
-                    isGranted = state.isSmsGranted,
-                    onGrantClick = { viewModel.onEvent(OnboardingEvent.OnGrantSmsClicked) }
-                )
 
-                Spacer(modifier = Modifier.height(12.dp))
 
                 PermissionStepCard(
                     stepNumber = "2",
@@ -189,7 +169,7 @@ fun OnboardingScreen(
                     )
                 ) {
                     Text(
-                        text = if (state.isSmsGranted) "Continue to Dashboard" else "Skip to Dashboard",
+                        text = "Continue to Dashboard",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
