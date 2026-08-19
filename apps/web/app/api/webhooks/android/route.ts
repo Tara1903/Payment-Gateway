@@ -99,10 +99,9 @@ export async function POST(request: NextRequest) {
 
   const payload = parsed.data; // this is now an array
 
-  const results = [];
-  
-  for (const item of payload) {
-    // 5. Audit: webhook received
+  // 5. Process all transactions in parallel to prevent Vercel 10s timeout!
+  const promises = payload.map(async (item) => {
+    // Audit: webhook received
     await appendAuditLog({
       actorType: 'ANDROID',
       actorId: deviceId,
@@ -112,7 +111,6 @@ export async function POST(request: NextRequest) {
       ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
     });
 
-    // 6. Insert raw transaction record
     const { data: txn, error: txnErr } = await supabase
       .from('transactions')
       .insert({
@@ -132,15 +130,12 @@ export async function POST(request: NextRequest) {
 
     if (txnErr || !txn) {
       if (txnErr?.code === '23505') {
-        results.push({ id: item.id, status: 'DUPLICATE' });
-        continue;
+        return { id: item.id, status: 'DUPLICATE' };
       }
       console.error('Failed to insert txn', txnErr);
-      results.push({ id: item.id, status: 'FAILED' });
-      continue;
+      return { id: item.id, status: 'FAILED' };
     }
 
-    // 7. Run verification pipeline
     const pipelineCtx = {
       rawPayload: { raw: item.rawMessage, parsed: item } as Record<string, unknown>,
       parsed: {
@@ -158,12 +153,17 @@ export async function POST(request: NextRequest) {
       merchantId: device!.merchant_id,
     };
 
-    runVerificationPipeline(pipelineCtx).catch((err: unknown) => {
+    // Note: Vercel serverless may freeze async functions after response. 
+    // We should ideally await this, but to keep the response fast, we will await it.
+    // Awaiting 50 pipelines in parallel will still be much faster than sequential inserts.
+    await runVerificationPipeline(pipelineCtx).catch((err: unknown) => {
       console.error('[Webhook] Pipeline error:', err);
     });
     
-    results.push({ id: item.id, status: 'RECEIVED' });
-  }
+    return { id: item.id, status: 'RECEIVED' };
+  });
+
+  const results = await Promise.all(promises);
 
   return NextResponse.json({ success: true, data: results });
 }
