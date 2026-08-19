@@ -41,7 +41,7 @@ async function authenticateDevice(request: NextRequest, rawBody?: string) {
     }
   }
 
-  const merchant = device.merchants as unknown as { webhook_secret: string } | null;
+  const merchant = device!.merchants as unknown as { webhook_secret: string } | null;
   if (!merchant) {
     return { error: NextResponse.json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Device not linked to merchant' } }, { status: 500 }) };
   }
@@ -58,7 +58,7 @@ async function authenticateDevice(request: NextRequest, rawBody?: string) {
     }
   }
 
-  return { supabase, deviceId, merchantId: device.merchant_id };
+  return { supabase, deviceId, merchantId: device!.merchant_id };
 }
 
 export async function GET(request: NextRequest) {

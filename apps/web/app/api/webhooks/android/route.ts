@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 3. Verify HMAC signature
-  const merchant = device.merchants as unknown as { webhook_secret: string };
+  const merchant = device!.merchants as unknown as { webhook_secret: string };
   const { valid, reason } = verifyWebhookSignature({
     timestamp,
     signature,
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
     const { data: txn, error: txnErr } = await supabase
       .from('transactions')
       .insert({
-        merchant_id: device.merchant_id,
+        merchant_id: device!.merchant_id,
         utr: item.referenceId ?? null,
         amount: item.amount,
         sender_name: item.sender,
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
       source: 'ANDROID_NOTIFICATION' as const,
       arrivedAt: new Date().toISOString(),
       transactionId: txn.id,
-      merchantId: device.merchant_id,
+      merchantId: device!.merchant_id,
     };
 
     runVerificationPipeline(pipelineCtx).catch((err: unknown) => {
