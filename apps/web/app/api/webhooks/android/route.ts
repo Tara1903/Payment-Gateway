@@ -97,66 +97,73 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const payload = parsed.data;
+  const payload = parsed.data; // this is now an array
 
-  // 5. Audit: webhook received
-  await appendAuditLog({
-    actorType: 'ANDROID',
-    actorId: deviceId,
-    eventType: 'WEBHOOK_RECEIVED',
-    entityType: 'webhook',
-    payload: { deviceId, eventType: payload.eventType, amount: payload.parsed.amount, utr: payload.parsed.utr },
-    ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
-  });
+  const results = [];
+  
+  for (const item of payload) {
+    // 5. Audit: webhook received
+    await appendAuditLog({
+      actorType: 'ANDROID',
+      actorId: deviceId,
+      eventType: 'WEBHOOK_RECEIVED',
+      entityType: 'webhook',
+      payload: { deviceId, eventType: 'NOTIFICATION_RECEIVED', amount: item.amount, utr: item.referenceId },
+      ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
+    });
 
-  // 6. Insert raw transaction record
-  const { data: txn, error: txnErr } = await supabase
-    .from('transactions')
-    .insert({
-      merchant_id: device.merchant_id,
-      utr: payload.parsed.utr,
-      amount: payload.parsed.amount,
-      sender_name: payload.parsed.senderName,
-      sender_upi: payload.parsed.senderUpi,
-      bank_ref: payload.parsed.bankRef,
-      payment_mode: 'UPI',
-      source: payload.source,
-      raw_payload: { raw: payload.raw, parsed: payload.parsed },
-      status: 'RECEIVED',
-    })
-    .select('id')
-    .single();
+    // 6. Insert raw transaction record
+    const { data: txn, error: txnErr } = await supabase
+      .from('transactions')
+      .insert({
+        merchant_id: device.merchant_id,
+        utr: item.referenceId ?? null,
+        amount: item.amount,
+        sender_name: item.sender,
+        sender_upi: null,
+        bank_ref: null,
+        payment_mode: 'UPI',
+        source: 'ANDROID_NOTIFICATION',
+        raw_payload: { raw: item.rawMessage, parsed: item },
+        status: 'RECEIVED',
+      })
+      .select('id')
+      .single();
 
-  if (txnErr || !txn) {
-    // Possible duplicate UTR — handled gracefully
-    if (txnErr?.code === '23505') {
-      return NextResponse.json(
-        { success: false, error: { code: 'DUPLICATE_UTR', message: 'Transaction with this UTR already processed' } },
-        { status: 409 }
-      );
+    if (txnErr || !txn) {
+      if (txnErr?.code === '23505') {
+        results.push({ id: item.id, status: 'DUPLICATE' });
+        continue;
+      }
+      console.error('Failed to insert txn', txnErr);
+      results.push({ id: item.id, status: 'FAILED' });
+      continue;
     }
-    return NextResponse.json(
-      { success: false, error: { code: 'TXN_INSERT_FAILED', message: txnErr?.message ?? 'Failed to record transaction' } },
-      { status: 500 }
-    );
+
+    // 7. Run verification pipeline
+    const pipelineCtx = {
+      rawPayload: { raw: item.rawMessage, parsed: item } as Record<string, unknown>,
+      parsed: {
+        amount: item.amount,
+        utr: item.referenceId ?? '',
+        senderName: item.sender,
+        senderUpi: null,
+        bankRef: null,
+        txnTimestamp: new Date(item.timestamp).toISOString(),
+      },
+      deviceId,
+      source: 'ANDROID_NOTIFICATION' as const,
+      arrivedAt: new Date().toISOString(),
+      transactionId: txn.id,
+      merchantId: device.merchant_id,
+    };
+
+    runVerificationPipeline(pipelineCtx).catch((err: unknown) => {
+      console.error('[Webhook] Pipeline error:', err);
+    });
+    
+    results.push({ id: item.id, status: 'RECEIVED' });
   }
 
-  // 7. Run verification pipeline asynchronously (do not await — respond immediately to Android)
-  // We use waitUntil pattern — just run it without blocking the response
-  const pipelineCtx = {
-    rawPayload: { raw: payload.raw, parsed: payload.parsed } as Record<string, unknown>,
-    parsed: payload.parsed,
-    deviceId,
-    source: payload.source as 'ANDROID_SMS' | 'ANDROID_NOTIFICATION',
-    arrivedAt: new Date().toISOString(),
-    transactionId: txn.id,
-    merchantId: device.merchant_id,
-  };
-
-  // Run pipeline — fire and await (we want real-time response to customer)
-  runVerificationPipeline(pipelineCtx).catch((err: unknown) => {
-    console.error('[Webhook] Pipeline error:', err);
-  });
-
-  return NextResponse.json({ success: true, data: { transactionId: txn.id, status: 'RECEIVED' } });
+  return NextResponse.json({ success: true, data: results });
 }

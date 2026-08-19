@@ -13,22 +13,15 @@ export const ManualVerificationSchema = z.object({
   notes: z.string().max(500).optional(),
 });
 
-export const AndroidWebhookSchema = z.object({
-  deviceId: z.string().min(1),
-  timestamp: z.string(),
-  eventType: z.enum(['SMS_RECEIVED', 'NOTIFICATION_RECEIVED']),
-  source: z.enum(['ANDROID_SMS', 'ANDROID_NOTIFICATION']),
-  raw: z.string(),
-  parsed: z.object({
-    amount: z.number().positive(),
-    utr: z.string().min(1),
-    senderName: z.string().nullable(),
-    senderUpi: z.string().nullable(),
-    bankRef: z.string().nullable(),
-    txnTimestamp: z.string(),
-  }),
-  signature: z.string(),
-});
+export const AndroidWebhookSchema = z.array(z.object({
+  id: z.string(),
+  amount: z.number(),
+  sender: z.string(),
+  referenceId: z.string().nullable().optional(),
+  timestamp: z.number(),
+  syncStatus: z.string(),
+  rawMessage: z.string(),
+}));
 
 export const HeartbeatSchema = z.object({
   deviceId: z.string().min(1),
