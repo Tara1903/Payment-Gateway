@@ -13,8 +13,8 @@ const HeartbeatSchema = z.object({
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
-  const timestamp = request.headers.get('X-StarPay-Timestamp');
-  const signature = request.headers.get('X-StarPay-Signature');
+  const timestamp = request.headers.get('X-StarPay-Timestamp') || request.headers.get('X-Timestamp');
+  const signature = request.headers.get('X-StarPay-Signature') || request.headers.get('X-Signature');
   const deviceId = request.headers.get('X-Device-ID');
 
   if (!timestamp || !signature || !deviceId) {

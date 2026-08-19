@@ -28,7 +28,7 @@ export async function GET(
   const supabase = createAdminClient();
   const { data: order, error } = await supabase
     .from('orders')
-    .select('id, order_ref, amount, reserved_amount, currency, description, status, upi_txn_ref, expires_at, paid_at, created_at')
+    .select('id, order_ref, amount, reserved_amount, currency, description, status, upi_txn_ref, expires_at, paid_at, created_at, return_url, webhook_url')
     .eq('id', orderId)
     .single();
 
@@ -65,6 +65,8 @@ export async function GET(
       upiTxnRef: order.upi_txn_ref,
       expiresAt: order.expires_at,
       paidAt: order.paid_at,
+      returnUrl: order.return_url,
+      webhookUrl: order.webhook_url,
       createdAt: order.created_at,
     },
   });

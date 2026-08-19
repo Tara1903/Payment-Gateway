@@ -19,6 +19,7 @@ interface OrderData {
   upiTxnRef: string | null;
   expiresAt: string | null;
   paidAt: string | null;
+  returnUrl?: string | null;
 }
 
 interface QRData {
@@ -75,7 +76,14 @@ export function PaymentPage({ orderId, token }: Props) {
         setOrder(updated);
         if (updated.status === 'PAID') {
           clearInterval(interval);
-          router.push(`/checkout/${orderId}/success?ref=${updated.orderRef}&amount=${updated.amount.toFixed(2)}`);
+          if (updated.returnUrl) {
+            const url = new URL(updated.returnUrl);
+            url.searchParams.set('orderId', orderId);
+            url.searchParams.set('status', 'PAID');
+            window.location.href = url.toString();
+          } else {
+            router.push(`/checkout/${orderId}/success?ref=${updated.orderRef}&amount=${updated.amount.toFixed(2)}`);
+          }
         } else if (updated.status === 'FAILED') {
           clearInterval(interval);
         }
@@ -113,7 +121,15 @@ export function PaymentPage({ orderId, token }: Props) {
   }
 
   if (order.status === 'PAID') {
-    router.push(`/checkout/${orderId}/success?ref=${order.orderRef}&amount=${order.amount.toFixed(2)}`);
+    if (order.returnUrl) {
+      // Append order ID and status to return URL
+      const url = new URL(order.returnUrl);
+      url.searchParams.set('orderId', orderId);
+      url.searchParams.set('status', 'PAID');
+      window.location.href = url.toString();
+    } else {
+      router.push(`/checkout/${orderId}/success?ref=${order.orderRef}&amount=${order.amount.toFixed(2)}`);
+    }
     return null;
   }
 

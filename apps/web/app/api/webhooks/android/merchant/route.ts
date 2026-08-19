@@ -10,8 +10,8 @@ const UpdateMerchantSchema = z.object({
 });
 
 async function authenticateDevice(request: NextRequest, rawBody?: string) {
-  const timestamp = request.headers.get('X-StarPay-Timestamp');
-  const signature = request.headers.get('X-StarPay-Signature');
+  const timestamp = request.headers.get('X-StarPay-Timestamp') || request.headers.get('X-Timestamp');
+  const signature = request.headers.get('X-StarPay-Signature') || request.headers.get('X-Signature');
   const deviceId = request.headers.get('X-Device-ID');
 
   if (!timestamp || !signature || !deviceId) {
@@ -19,14 +19,26 @@ async function authenticateDevice(request: NextRequest, rawBody?: string) {
   }
 
   const supabase = createAdminClient();
-  const { data: device } = await supabase
+  let { data: device } = await supabase
     .from('android_devices')
     .select('id, merchant_id, merchants(webhook_secret)')
     .eq('device_id', deviceId)
     .single();
 
   if (!device) {
-    return { error: NextResponse.json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Unknown device' } }, { status: 401 }) };
+    // Auto-register device
+    const { data: activeMerchant } = await supabase.from('merchants').select('id, webhook_secret').eq('is_active', true).single();
+    if (activeMerchant) {
+      await supabase.from('android_devices').insert({
+        merchant_id: activeMerchant.id,
+        device_id: deviceId,
+        device_name: `Android Device (${deviceId.slice(0, 6)})`,
+        is_active: true,
+      });
+      device = { id: 'new', merchant_id: activeMerchant.id, merchants: { webhook_secret: activeMerchant.webhook_secret } } as any;
+    } else {
+      return { error: NextResponse.json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Unknown device and no active merchant' } }, { status: 401 }) };
+    }
   }
 
   const merchant = device.merchants as unknown as { webhook_secret: string } | null;

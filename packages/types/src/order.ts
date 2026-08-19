@@ -22,6 +22,8 @@ export interface Order {
   expiresAt: string | null;
   paidAt: string | null;
   metadata: Record<string, unknown>;
+  returnUrl: string | null;
+  webhookUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -34,6 +36,8 @@ export interface CreateOrderInput {
   customerEmail?: string;
   customerPhone?: string;
   metadata?: Record<string, unknown>;
+  returnUrl?: string;
+  webhookUrl?: string;
 }
 
 export interface OrderWithCustomer extends Order {

@@ -23,7 +23,7 @@ export async function runVerificationPipeline(ctx: PipelineInput): Promise<void>
   // --- Step 1: Find matching order by reserved_amount ---
   const { data: order } = await supabase
     .from('orders')
-    .select('id, amount, reserved_amount, status, expires_at, upi_txn_ref')
+    .select('id, amount, reserved_amount, status, expires_at, upi_txn_ref, webhook_url')
     .eq('reserved_amount', ctx.parsed.amount)
     .eq('status', 'AWAITING_PAYMENT')
     .single();
@@ -112,13 +112,14 @@ export async function runVerificationPipeline(ctx: PipelineInput): Promise<void>
   }
 
   // --- All steps passed: APPROVE ---
-  await approveOrder(orderId, ctx.transactionId, ctx.parsed, supabase);
+  await approveOrder(orderId, ctx.transactionId, ctx.parsed, order.webhook_url, supabase);
 }
 
 async function approveOrder(
   orderId: string,
   transactionId: string,
   parsed: ParsedPayment,
+  webhookUrl: string | null,
   supabase: ReturnType<typeof createAdminClient>
 ) {
   const paidAt = new Date().toISOString();
@@ -153,6 +154,23 @@ async function approveOrder(
   }).catch((err: unknown) => {
     console.error('[Pipeline] Failed to import notifications:', err);
   });
+
+  // Trigger external webhook if configured
+  if (webhookUrl) {
+    import('@/lib/notifications/webhook').then(({ sendOrderWebhook }) => {
+      sendOrderWebhook(orderId, webhookUrl, {
+        orderId,
+        amount: parsed.amount,
+        utr: parsed.utr,
+        status: 'PAID',
+        paidAt
+      }).catch((err: unknown) => {
+        console.error('[Pipeline] Webhook error:', err);
+      });
+    }).catch((err: unknown) => {
+      console.error('[Pipeline] Failed to import webhook module:', err);
+    });
+  }
 }
 
 async function triggerFallback(

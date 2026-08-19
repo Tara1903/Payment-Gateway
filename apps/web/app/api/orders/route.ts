@@ -15,6 +15,8 @@ const CreateOrderSchema = z.object({
   customerEmail: z.string().email().optional(),
   customerPhone: z.string().regex(/^[6-9]\d{9}$/).optional(),
   metadata: z.record(z.unknown()).optional(),
+  returnUrl: z.string().url().optional(),
+  webhookUrl: z.string().url().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -43,7 +45,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { amount, currency, description, customerName, customerEmail, customerPhone, metadata } = parsed.data;
+  const { amount, currency, description, customerName, customerEmail, customerPhone, metadata, returnUrl, webhookUrl } = parsed.data;
 
   const supabase = createAdminClient();
 
@@ -116,6 +118,8 @@ export async function POST(request: NextRequest) {
       upi_txn_ref: upiTxnRef,
       expires_at: expiresAt,
       metadata: metadata ?? {},
+      return_url: returnUrl ?? null,
+      webhook_url: webhookUrl ?? null,
     })
     .select('id')
     .single();
