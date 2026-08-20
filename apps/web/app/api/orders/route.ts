@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
       paymentToken,
       upiTxnRef,
       expiresAt,
-      checkoutUrl: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/${order.id}`,
+      checkoutUrl: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/${order.id}?token=${paymentToken}`,
     },
   }, { status: 201 });
 }
