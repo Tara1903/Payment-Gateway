@@ -23,7 +23,7 @@ export async function runVerificationPipeline(ctx: PipelineInput): Promise<void>
   // --- Step 1: Find matching order by reserved_amount ---
   const { data: order } = await supabase
     .from('orders')
-    .select('id, amount, reserved_amount, status, expires_at, upi_txn_ref, webhook_url')
+    .select('id, amount, reserved_amount, status, expires_at, upi_txn_ref, webhook_url, metadata')
     .eq('reserved_amount', ctx.parsed.amount)
     .eq('status', 'AWAITING_PAYMENT')
     .single();
@@ -112,7 +112,7 @@ export async function runVerificationPipeline(ctx: PipelineInput): Promise<void>
   }
 
   // --- All steps passed: APPROVE ---
-  await approveOrder(orderId, ctx.transactionId, ctx.parsed, order.webhook_url, supabase);
+  await approveOrder(orderId, ctx.transactionId, ctx.parsed, order.webhook_url, order.metadata, supabase);
 }
 
 async function approveOrder(
@@ -120,6 +120,7 @@ async function approveOrder(
   transactionId: string,
   parsed: ParsedPayment,
   webhookUrl: string | null,
+  metadata: Record<string, unknown> | null,
   supabase: ReturnType<typeof createAdminClient>
 ) {
   const paidAt = new Date().toISOString();
@@ -163,7 +164,8 @@ async function approveOrder(
         amount: parsed.amount,
         utr: parsed.utr,
         status: 'PAID',
-        paidAt
+        paidAt,
+        metadata
       }).catch((err: unknown) => {
         console.error('[Pipeline] Webhook error:', err);
       });

@@ -16,7 +16,10 @@ export async function POST(
 
   const { data: mv, error } = await supabase
     .from('manual_verifications')
-    .select('id, order_id, status')
+    .select(`
+      id, order_id, status,
+      orders ( amount, webhook_url, upi_txn_ref, metadata )
+    `)
     .eq('id', id)
     .single();
 
@@ -63,6 +66,24 @@ export async function POST(
     entityId: mv.order_id,
     payload: { manualVerificationId: id, role: auth.role },
   });
+
+  const orderNode = Array.isArray(mv.orders) ? mv.orders[0] : mv.orders;
+  if (orderNode?.webhook_url) {
+    import('@/lib/notifications/webhook').then(({ sendOrderWebhook }) => {
+      sendOrderWebhook(mv.order_id, orderNode.webhook_url, {
+        orderId: mv.order_id,
+        amount: orderNode.amount,
+        utr: orderNode.upi_txn_ref || '',
+        status: 'PAID',
+        paidAt: now,
+        metadata: orderNode.metadata
+      }).catch((err: unknown) => {
+        console.error('[ManualApprove] Webhook error:', err);
+      });
+    }).catch((err: unknown) => {
+      console.error('[ManualApprove] Failed to import webhook module:', err);
+    });
+  }
 
   return NextResponse.json({ success: true, data: { approved: true, orderId: mv.order_id } });
 }
