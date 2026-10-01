@@ -67,17 +67,29 @@ export default async function OrderDetailPage({ params }: Props) {
           <div className="card p-6">
             <h2 className="font-semibold mb-4" style={{ color: 'rgb(248 250 252)' }}>Payment Details</h2>
             <dl className="grid grid-cols-2 gap-4">
-              {[
+              {([
                 { label: 'Amount', value: formatCurrency(order.amount) },
                 { label: 'Reserved Amount', value: `₹${Number(order.reserved_amount).toFixed(2)}` },
                 { label: 'Currency', value: order.currency },
                 { label: 'UPI Ref', value: order.upi_txn_ref ?? '—' },
                 { label: 'Paid At', value: order.paid_at ? formatDateTime(order.paid_at) : '—' },
                 { label: 'Expires At', value: order.expires_at ? formatDateTime(order.expires_at) : '—' },
-              ].map(({ label, value }) => (
+                {
+                  label: 'Source App',
+                  value: (() => {
+                    const m = order.metadata as Record<string, unknown> | null;
+                    return (m?.businessName ?? m?.appName) as string || '—';
+                  })(),
+                },
+              ] as { label: string; value: string }[]).map(({ label, value }) => (
                 <div key={label}>
                   <dt className="text-xs mb-1" style={{ color: 'rgb(71 85 105)' }}>{label}</dt>
-                  <dd className="text-sm font-medium font-mono" style={{ color: 'rgb(248 250 252)' }}>{value}</dd>
+                  <dd
+                    className="text-sm font-medium font-mono"
+                    style={{ color: label === 'Source App' && value !== '—' ? 'rgb(167 139 250)' : 'rgb(248 250 252)' }}
+                  >
+                    {value}
+                  </dd>
                 </div>
               ))}
             </dl>

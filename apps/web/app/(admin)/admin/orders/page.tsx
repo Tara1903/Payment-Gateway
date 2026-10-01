@@ -8,29 +8,66 @@ export const metadata: Metadata = { title: 'Orders' };
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  searchParams: Promise<{ page?: string; status?: string; search?: string }>;
+  searchParams: Promise<{ page?: string; status?: string; app?: string }>;
 }
 
 export default async function OrdersPage({ searchParams }: Props) {
   const auth = await requireAdminRole('READ_ONLY');
   if (!auth.ok) redirect('/admin/login');
 
-  const { page: pageStr, status, search } = await searchParams;
+  const { page: pageStr, status, app } = await searchParams;
   const page = Math.max(1, parseInt(pageStr ?? '1', 10));
   const limit = 25;
   const from = (page - 1) * limit;
 
   const supabase = createAdminClient();
+
+  // Fetch a sample of orders to build the app filter list
+  const { data: allMeta } = await supabase
+    .from('orders')
+    .select('metadata')
+    .order('created_at', { ascending: false })
+    .limit(500);
+
+  const appNames = Array.from(
+    new Set(
+      (allMeta ?? [])
+        .map((o) => {
+          const m = o.metadata as Record<string, unknown> | null;
+          return (m?.businessName ?? m?.appName) as string | undefined;
+        })
+        .filter(Boolean) as string[]
+    )
+  ).sort();
+
   let query = supabase
     .from('orders')
-    .select('id, order_ref, amount, reserved_amount, status, paid_at, created_at, customers(name, email)', { count: 'exact' })
+    .select('id, order_ref, amount, reserved_amount, status, paid_at, created_at, metadata, customers(name, email)', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(from, from + limit - 1);
 
   if (status) query = query.eq('status', status);
 
   const { data: orders, count } = await query;
+
+  // Client-side app filter (metadata is JSONB — filter in app code)
+  const filteredOrders = app
+    ? (orders ?? []).filter((o) => {
+        const m = o.metadata as Record<string, unknown> | null;
+        return (m?.businessName ?? m?.appName) === app;
+      })
+    : (orders ?? []);
+
   const totalPages = Math.ceil((count ?? 0) / limit);
+
+  function buildUrl(overrides: Record<string, string | undefined>) {
+    const params = new URLSearchParams();
+    if (overrides.page ?? (page > 1 ? String(page) : undefined)) params.set('page', overrides.page ?? String(page));
+    if (overrides.status !== undefined ? overrides.status : status) params.set('status', (overrides.status !== undefined ? overrides.status : status)!);
+    if (overrides.app !== undefined ? overrides.app : app) params.set('app', (overrides.app !== undefined ? overrides.app : app)!);
+    const qs = params.toString();
+    return `/admin/orders${qs ? `?${qs}` : ''}`;
+  }
 
   return (
     <div className="p-8">
@@ -41,12 +78,46 @@ export default async function OrdersPage({ searchParams }: Props) {
         </div>
       </div>
 
+      {/* App Filter */}
+      {appNames.length > 0 && (
+        <div className="mb-4">
+          <p className="text-xs font-medium mb-2" style={{ color: 'rgb(71 85 105)' }}>Filter by App</p>
+          <div className="flex gap-2 flex-wrap">
+            <a
+              href={buildUrl({ app: undefined, page: '1' })}
+              className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+              style={{
+                background: !app ? 'rgb(139 92 246 / 0.15)' : 'rgb(255 255 255 / 0.04)',
+                color: !app ? 'rgb(167 139 250)' : 'rgb(100 116 139)',
+                border: !app ? '1px solid rgb(139 92 246 / 0.25)' : '1px solid rgb(255 255 255 / 0.08)',
+              }}
+            >
+              All Apps
+            </a>
+            {appNames.map((name) => (
+              <a
+                key={name}
+                href={buildUrl({ app: name, page: '1' })}
+                className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+                style={{
+                  background: app === name ? 'rgb(139 92 246 / 0.15)' : 'rgb(255 255 255 / 0.04)',
+                  color: app === name ? 'rgb(167 139 250)' : 'rgb(100 116 139)',
+                  border: app === name ? '1px solid rgb(139 92 246 / 0.25)' : '1px solid rgb(255 255 255 / 0.08)',
+                }}
+              >
+                {name}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Status Filter */}
       <div className="flex gap-2 mb-6 flex-wrap">
         {[undefined, 'PAID', 'AWAITING_PAYMENT', 'PENDING_VERIFICATION', 'FAILED'].map((s) => (
           <a
             key={s ?? 'all'}
-            href={s ? `/admin/orders?status=${s}` : '/admin/orders'}
+            href={buildUrl({ status: s, page: '1' })}
             className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
             style={{
               background: status === s ? 'rgb(139 92 246 / 0.15)' : 'rgb(255 255 255 / 0.04)',
@@ -54,26 +125,32 @@ export default async function OrdersPage({ searchParams }: Props) {
               border: status === s ? '1px solid rgb(139 92 246 / 0.25)' : '1px solid rgb(255 255 255 / 0.08)',
             }}
           >
-            {s ?? 'All'}
+            {s ?? 'All Statuses'}
           </a>
         ))}
       </div>
 
-      <OrdersTable orders={orders ?? []} />
+      <OrdersTable orders={filteredOrders} />
 
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-6">
           {page > 1 && (
-            <a href={`/admin/orders?page=${page - 1}${status ? `&status=${status}` : ''}`}
-              className="px-4 py-2 rounded-xl text-sm" style={{ background: 'rgb(255 255 255 / 0.04)', color: 'rgb(148 163 184)' }}>
+            <a
+              href={buildUrl({ page: String(page - 1) })}
+              className="px-4 py-2 rounded-xl text-sm"
+              style={{ background: 'rgb(255 255 255 / 0.04)', color: 'rgb(148 163 184)' }}
+            >
               Previous
             </a>
           )}
           <span className="px-4 py-2 text-sm" style={{ color: 'rgb(100 116 139)' }}>Page {page} of {totalPages}</span>
           {page < totalPages && (
-            <a href={`/admin/orders?page=${page + 1}${status ? `&status=${status}` : ''}`}
-              className="px-4 py-2 rounded-xl text-sm" style={{ background: 'rgb(255 255 255 / 0.04)', color: 'rgb(148 163 184)' }}>
+            <a
+              href={buildUrl({ page: String(page + 1) })}
+              className="px-4 py-2 rounded-xl text-sm"
+              style={{ background: 'rgb(255 255 255 / 0.04)', color: 'rgb(148 163 184)' }}
+            >
               Next
             </a>
           )}

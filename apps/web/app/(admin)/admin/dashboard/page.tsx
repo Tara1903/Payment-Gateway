@@ -36,7 +36,7 @@ export default async function DashboardPage() {
     supabase.from('orders').select('amount').eq('status', 'PAID').gte('paid_at', today.toISOString()),
     supabase.from('manual_verifications').select('*', { count: 'exact', head: true }).eq('status', 'PENDING'),
     supabase.from('fraud_flags').select('*', { count: 'exact', head: true }).eq('resolved', false),
-    supabase.from('orders').select('id, order_ref, amount, reserved_amount, status, paid_at, created_at, customers(name, email)').order('created_at', { ascending: false }).limit(10),
+    supabase.from('orders').select('id, order_ref, amount, reserved_amount, status, paid_at, created_at, metadata, customers(name, email)').order('created_at', { ascending: false }).limit(10),
     supabase.from('android_devices').select('id, device_name, last_heartbeat, battery_level, is_active, app_version').eq('is_active', true),
     // Last 200 orders to derive connected client apps from metadata.businessName
     supabase.from('orders').select('metadata, created_at').order('created_at', { ascending: false }).limit(200),
