@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
   const auth = await authenticateDevice(request);
   if (auth.error) return auth.error;
 
-  const { data, error } = await auth.supabase!
+  const { data: merchantData, error } = await auth.supabase!
     .from('merchants')
     .select('name, upi_id, bank_account, bank_ifsc')
     .eq('id', auth.merchantId!)
@@ -75,7 +75,59 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: { code: 'DB_ERROR', message: error.message } }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, data });
+  // Discover connected client apps from orders
+  const { data: recentOrders } = await auth.supabase!
+    .from('orders')
+    .select('metadata, webhook_url, created_at, status')
+    .order('created_at', { ascending: false })
+    .limit(200);
+
+  const appsMap = new Map<string, { name: string; webhookUrl?: string; totalOrders: number; lastActive?: string; status: string }>();
+
+  if (recentOrders && recentOrders.length > 0) {
+    for (const order of recentOrders) {
+      const meta = (order.metadata as Record<string, unknown>) ?? {};
+      const appName = 
+        (meta.businessName as string) || 
+        (meta.appName as string) || 
+        (meta.merchantName as string) || 
+        (order.webhook_url ? new URL(order.webhook_url).hostname : null) || 
+        'Default App';
+
+      const existing = appsMap.get(appName);
+      if (existing) {
+        existing.totalOrders += 1;
+      } else {
+        appsMap.set(appName, {
+          name: appName,
+          webhookUrl: order.webhook_url || undefined,
+          totalOrders: 1,
+          lastActive: order.created_at,
+          status: 'Active',
+        });
+      }
+    }
+  }
+
+  // Ensure default merchant is listed if no orders yet
+  if (appsMap.size === 0 && merchantData?.name) {
+    appsMap.set(merchantData.name, {
+      name: merchantData.name,
+      totalOrders: 0,
+      lastActive: new Date().toISOString(),
+      status: 'Active',
+    });
+  }
+
+  const connected_apps = Array.from(appsMap.values());
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      ...merchantData,
+      connected_apps,
+    },
+  });
 }
 
 export async function PATCH(request: NextRequest) {
