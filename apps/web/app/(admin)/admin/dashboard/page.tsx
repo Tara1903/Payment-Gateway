@@ -6,6 +6,7 @@ import { formatCurrency } from '@starpay/shared';
 import { OrdersTable } from '@/components/admin/OrdersTable';
 import { MetricCard } from '@/components/admin/MetricCard';
 import { DeviceStatus } from '@/components/admin/DeviceStatus';
+import { ConnectedAppsCard } from '@/components/admin/ConnectedAppsCard';
 
 export const metadata: Metadata = { title: 'Dashboard' };
 export const dynamic = 'force-dynamic';
@@ -28,6 +29,7 @@ export default async function DashboardPage() {
     { count: fraudFlags },
     { data: recentOrders },
     { data: devices },
+    { data: recentOrdersMeta },
   ] = await Promise.all([
     supabase.from('orders').select('*', { count: 'exact', head: true }),
     supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'PAID').gte('paid_at', today.toISOString()),
@@ -36,9 +38,37 @@ export default async function DashboardPage() {
     supabase.from('fraud_flags').select('*', { count: 'exact', head: true }).eq('resolved', false),
     supabase.from('orders').select('id, order_ref, amount, reserved_amount, status, paid_at, created_at, customers(name, email)').order('created_at', { ascending: false }).limit(10),
     supabase.from('android_devices').select('id, device_name, last_heartbeat, battery_level, is_active, app_version').eq('is_active', true),
+    // Last 200 orders to derive connected client apps from metadata.businessName
+    supabase.from('orders').select('metadata, created_at').order('created_at', { ascending: false }).limit(200),
   ]);
 
   const todayRevenue = (revenueToday ?? []).reduce((sum, o) => sum + Number(o.amount), 0);
+
+  // Aggregate connected apps from metadata.businessName / appName
+  const appMap = new Map<string, { totalOrders: number; lastActive: string | null }>();
+  for (const order of recentOrdersMeta ?? []) {
+    const meta = order.metadata as Record<string, unknown> | null;
+    const name = (meta?.businessName ?? meta?.appName) as string | undefined;
+    if (!name) continue;
+    const existing = appMap.get(name);
+    if (!existing) {
+      appMap.set(name, { totalOrders: 1, lastActive: order.created_at as string });
+    } else {
+      existing.totalOrders += 1;
+      if (!existing.lastActive || (order.created_at as string) > existing.lastActive) {
+        existing.lastActive = order.created_at as string;
+      }
+    }
+  }
+  const connectedApps = Array.from(appMap.entries())
+    .map(([name, data]) => ({
+      name,
+      webhookUrl: null as string | null,
+      totalOrders: data.totalOrders,
+      lastActive: data.lastActive,
+      status: 'active' as const,
+    }))
+    .sort((a, b) => (b.lastActive ?? '').localeCompare(a.lastActive ?? ''));
 
   return (
     <div className="p-8">
@@ -92,10 +122,25 @@ export default async function DashboardPage() {
           <OrdersTable orders={recentOrders ?? []} />
         </div>
 
-        {/* Device Status */}
-        <div>
-          <h2 className="font-semibold mb-4" style={{ color: 'rgb(248 250 252)' }}>Android Devices</h2>
-          <DeviceStatus devices={devices ?? []} />
+        {/* Right column: Devices + Connected Apps */}
+        <div className="flex flex-col gap-6">
+          <div>
+            <h2 className="font-semibold mb-4" style={{ color: 'rgb(248 250 252)' }}>Android Devices</h2>
+            <DeviceStatus devices={devices ?? []} />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold" style={{ color: 'rgb(248 250 252)' }}>Connected Apps</h2>
+              <span
+                className="text-xs font-mono px-2 py-0.5 rounded-full"
+                style={{ background: 'rgb(139 92 246 / 0.12)', color: 'rgb(139 92 246)' }}
+              >
+                {connectedApps.length}
+              </span>
+            </div>
+            <ConnectedAppsCard apps={connectedApps} />
+          </div>
         </div>
       </div>
     </div>
