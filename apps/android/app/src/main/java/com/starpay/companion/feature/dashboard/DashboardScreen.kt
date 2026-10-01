@@ -170,6 +170,13 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
             }
 
             item {
+                ConnectedAppsCard(
+                    merchant = state.merchant,
+                    isLoading = state.isMerchantLoading
+                )
+            }
+
+            item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
