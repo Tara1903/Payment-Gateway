@@ -11,6 +11,8 @@ const CreateOrderSchema = z.object({
   amount: z.number().positive().multipleOf(0.01),
   currency: z.string().length(3).default('INR'),
   description: z.string().max(255).optional(),
+  businessName: z.string().max(100).optional(),
+  appName: z.string().max(100).optional(),
   customerName: z.string().max(100).optional(),
   customerEmail: z.string().email().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
   customerPhone: z.string().regex(/^[6-9]\d{9}$/).optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
@@ -45,7 +47,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { amount, currency, description, customerName, customerEmail, customerPhone, metadata, returnUrl, webhookUrl } = parsed.data;
+  const { amount, currency, description, businessName, appName, customerName, customerEmail, customerPhone, metadata, returnUrl, webhookUrl } = parsed.data;
+  const effectiveBusinessName = businessName || appName || (metadata?.businessName as string) || (metadata?.appName as string) || undefined;
+  const finalMetadata = {
+    ...(metadata ?? {}),
+    ...(effectiveBusinessName ? { businessName: effectiveBusinessName } : {}),
+  };
 
   const supabase = createAdminClient();
 
@@ -117,7 +124,7 @@ export async function POST(request: NextRequest) {
       payment_token: 'PENDING', // temporary
       upi_txn_ref: upiTxnRef,
       expires_at: expiresAt,
-      metadata: metadata ?? {},
+      metadata: finalMetadata,
       return_url: returnUrl ?? null,
       webhook_url: webhookUrl ?? null,
     })

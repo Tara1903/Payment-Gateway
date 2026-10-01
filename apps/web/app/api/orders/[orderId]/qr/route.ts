@@ -30,7 +30,7 @@ export async function GET(
   const supabase = createAdminClient();
   const { data: order, error } = await supabase
     .from('orders')
-    .select('id, reserved_amount, description, status, upi_txn_ref, expires_at')
+    .select('id, reserved_amount, description, status, upi_txn_ref, expires_at, metadata')
     .eq('id', orderId)
     .single();
 
@@ -55,12 +55,16 @@ export async function GET(
     );
   }
 
+  const meta = (order.metadata as Record<string, unknown>) ?? {};
+  const businessName = (meta.businessName as string) || (meta.merchantName as string) || (meta.appName as string) || process.env.MERCHANT_NAME || 'Ayurdhara';
   const merchantUpiId = process.env.MERCHANT_UPI_ID ?? 'ayurdhara@upi';
+
   const upiUrl = buildUpiUrl({
     amount: order.reserved_amount,
     txnRef: order.upi_txn_ref ?? orderId.slice(0, 12),
-    description: order.description ?? 'Payment to Ayurdhara',
+    description: order.description ?? `Payment to ${businessName}`,
     upiId: merchantUpiId,
+    merchantName: businessName,
   });
 
   const [qrDataUrl] = await Promise.all([
@@ -70,8 +74,8 @@ export async function GET(
       event: 'QR_GENERATED',
       actorType: 'SYSTEM',
       label: 'QR Code Generated',
-      description: `Payment QR generated for ₹${order.reserved_amount.toFixed(2)}`,
-      meta: { amount: order.reserved_amount, upiId: merchantUpiId },
+      description: `Payment QR generated for ₹${order.reserved_amount.toFixed(2)} (${businessName})`,
+      meta: { amount: order.reserved_amount, upiId: merchantUpiId, businessName },
     }),
   ]);
 
@@ -81,6 +85,7 @@ export async function GET(
       qrDataUrl,
       upiUrl,
       upiId: merchantUpiId,
+      businessName,
       amount: order.reserved_amount,
       expiresAt: order.expires_at,
     },

@@ -28,7 +28,7 @@ export async function GET(
   const supabase = createAdminClient();
   const { data: order, error } = await supabase
     .from('orders')
-    .select('id, order_ref, amount, reserved_amount, currency, description, status, upi_txn_ref, expires_at, paid_at, created_at, return_url, webhook_url')
+    .select('id, order_ref, amount, reserved_amount, currency, description, status, upi_txn_ref, expires_at, paid_at, created_at, return_url, webhook_url, metadata')
     .eq('id', orderId)
     .single();
 
@@ -52,11 +52,15 @@ export async function GET(
     order.status = 'FAILED';
   }
 
+  const meta = (order.metadata as Record<string, unknown>) ?? {};
+  const businessName = (meta.businessName as string) || (meta.merchantName as string) || (meta.appName as string) || process.env.MERCHANT_NAME || 'Merchant';
+
   return NextResponse.json({
     success: true,
     data: {
       orderId: order.id,
       orderRef: order.order_ref,
+      businessName,
       amount: order.amount,
       reservedAmount: order.reserved_amount,
       currency: order.currency,

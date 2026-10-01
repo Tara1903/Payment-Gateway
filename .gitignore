@@ -39,3 +39,4 @@ supabase/.temp
 build/
 
 env.local
+.vercel

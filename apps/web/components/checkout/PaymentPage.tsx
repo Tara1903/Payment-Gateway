@@ -19,6 +19,7 @@ interface OrderData {
   upiTxnRef: string | null;
   expiresAt: string | null;
   paidAt: string | null;
+  businessName?: string | null;
   returnUrl?: string | null;
 }
 
@@ -156,7 +157,7 @@ export function PaymentPage({ orderId, token }: Props) {
           <div className="w-8 h-8 rounded-lg flex items-center justify-center gradient-brand">
             <span className="text-sm">⚡</span>
           </div>
-          <span className="font-semibold" style={{ color: 'rgb(248 250 252)' }}>Ayurdhara</span>
+          <span className="font-semibold" style={{ color: 'rgb(248 250 252)' }}>{order.businessName || 'Ayurdhara'}</span>
           <div className="ml-auto">
             <span className="text-xs px-2 py-1 rounded-full" style={{ background: 'rgb(52 211 153 / 0.1)', color: 'rgb(52 211 153)' }}>
               Secured by StarPay
