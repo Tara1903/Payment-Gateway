@@ -1,5 +1,6 @@
 import type { InvoiceData } from '@starpay/types';
 import { createAdminClient } from '@/lib/supabase/server';
+import { resolveAppName } from '@/lib/utils/resolveApp';
 
 /**
  * Generate a unique invoice number.
@@ -122,7 +123,7 @@ export async function generateInvoice(orderId: string): Promise<GenerateInvoiceR
   const { data: order, error: orderErr } = await supabase
     .from('orders')
     .select(`
-      id, order_ref, amount, currency, description, paid_at, created_at,
+      id, order_ref, amount, currency, description, paid_at, created_at, metadata,
       customers(name, email),
       transactions(utr),
       merchants(name, upi_id)
@@ -151,16 +152,29 @@ export async function generateInvoice(orderId: string): Promise<GenerateInvoiceR
   const sequence = Number(seqData ?? 1);
   const invoiceNumber = generateInvoiceNumber(sequence);
 
+  const meta = (order.metadata as Record<string, unknown>) ?? {};
+  const appBusinessName = resolveAppName({
+    businessName: meta.businessName as string,
+    appName: meta.appName as string,
+    merchantName: meta.merchantName as string,
+    metadata: meta,
+    description: order.description,
+  });
+
   const merchant = order.merchants as unknown as { name: string; upi_id: string } | null;
   const customer = order.customers as unknown as { name: string | null; email: string | null } | null;
   const transaction = Array.isArray(order.transactions) ? order.transactions[0] as { utr: string | null } | undefined : null;
+
+  const displayMerchantName = (appBusinessName && appBusinessName !== 'StarPay Direct')
+    ? appBusinessName
+    : (merchant?.name ?? process.env.MERCHANT_NAME ?? 'Hari Singh');
 
   const invoiceData: InvoiceData = {
     invoiceNumber,
     orderRef: order.order_ref,
     orderDate: order.created_at,
     paidAt: order.paid_at,
-    merchantName: merchant?.name ?? process.env.MERCHANT_NAME ?? 'Hari Singh',
+    merchantName: displayMerchantName,
     merchantUpiId: merchant?.upi_id ?? process.env.MERCHANT_UPI_ID ?? '9630937033@sbi',
     customerName: customer?.name ?? null,
     customerEmail: customer?.email ?? null,

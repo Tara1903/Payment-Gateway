@@ -4,6 +4,7 @@ import { appendTimeline } from '@/lib/timeline/logger';
 import { appendAuditLog } from '@/lib/audit/logger';
 import { createAdminClient } from '@/lib/supabase/server';
 import { PaymentConfirmationEmail } from '@/lib/email/templates/PaymentConfirmation';
+import { resolveAppName } from '@/lib/utils/resolveApp';
 
 export async function sendPaymentApprovedNotifications(orderId: string): Promise<void> {
   const supabase = createAdminClient();
@@ -12,7 +13,7 @@ export async function sendPaymentApprovedNotifications(orderId: string): Promise
   const { data: order } = await supabase
     .from('orders')
     .select(`
-      id, order_ref, amount, currency, description, paid_at,
+      id, order_ref, amount, currency, description, paid_at, metadata,
       customers(name, email),
       transactions(utr),
       merchants(name, upi_id)
@@ -42,13 +43,26 @@ export async function sendPaymentApprovedNotifications(orderId: string): Promise
 
   // 2. Send email if customer has an email
   if (customer?.email) {
+    const meta = (order.metadata as Record<string, unknown>) ?? {};
+    const appBusinessName = resolveAppName({
+      businessName: meta.businessName as string,
+      appName: meta.appName as string,
+      merchantName: meta.merchantName as string,
+      metadata: meta,
+      description: order.description,
+    });
+
+    const displayMerchantName = (appBusinessName && appBusinessName !== 'StarPay Direct')
+      ? appBusinessName
+      : (merchant?.name ?? process.env.MERCHANT_NAME ?? 'Hari Singh');
+
     const html = PaymentConfirmationEmail({
       data: {
         invoiceNumber: invoice?.invoiceNumber ?? order.order_ref,
         orderRef: order.order_ref,
         orderDate: order.paid_at,
         paidAt: order.paid_at,
-        merchantName: merchant?.name ?? process.env.MERCHANT_NAME ?? 'Hari Singh',
+        merchantName: displayMerchantName,
         merchantUpiId: merchant?.upi_id ?? process.env.MERCHANT_UPI_ID ?? '9630937033@sbi',
         customerName: customer.name,
         customerEmail: customer.email,

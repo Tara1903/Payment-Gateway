@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { verifyOrderToken } from '@/lib/crypto/token';
 import { buildUpiUrl, generateQrCode } from '@/lib/upi';
 import { appendTimeline } from '@/lib/timeline/logger';
+import { resolveAppName } from '@/lib/utils/resolveApp';
 
 export async function GET(
   request: NextRequest,
@@ -65,10 +66,17 @@ export async function GET(
   const { data: merchant } = await merchantQuery.single();
 
   const meta = (order.metadata as Record<string, unknown>) ?? {};
-  const clientBusinessName = (meta.businessName as string) || (meta.merchantName as string) || (meta.appName as string);
+  const resolvedApp = resolveAppName({
+    businessName: meta.businessName as string,
+    appName: meta.appName as string,
+    merchantName: meta.merchantName as string,
+    metadata: meta,
+    description: order.description,
+  });
   const defaultMerchantName = merchant?.name || process.env.MERCHANT_NAME || 'Hari Singh';
-  const businessName = clientBusinessName || defaultMerchantName;
-  const merchantUpiId = merchant?.upi_id || process.env.MERCHANT_UPI_ID || '9630937033@sbi';
+  const businessName = (resolvedApp && resolvedApp !== 'StarPay Direct') ? resolvedApp : defaultMerchantName;
+  const customUpiId = (meta.upiId as string) || (meta.merchantUpiId as string) || (meta.vpa as string);
+  const merchantUpiId = customUpiId || merchant?.upi_id || process.env.MERCHANT_UPI_ID || '9630937033@sbi';
 
   const upiUrl = buildUpiUrl({
     amount: order.reserved_amount,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { verifyOrderToken } from '@/lib/crypto/token';
+import { resolveAppName } from '@/lib/utils/resolveApp';
 
 export async function GET(
   request: NextRequest,
@@ -53,7 +54,16 @@ export async function GET(
   }
 
   const meta = (order.metadata as Record<string, unknown>) ?? {};
-  const businessName = (meta.businessName as string) || (meta.merchantName as string) || (meta.appName as string) || process.env.MERCHANT_NAME || 'Hari Singh';
+  const resolvedApp = resolveAppName({
+    businessName: meta.businessName as string,
+    appName: meta.appName as string,
+    merchantName: meta.merchantName as string,
+    metadata: meta,
+    webhookUrl: order.webhook_url,
+    returnUrl: order.return_url,
+    description: order.description,
+  });
+  const businessName = (resolvedApp && resolvedApp !== 'StarPay Direct') ? resolvedApp : (process.env.MERCHANT_NAME || 'Hari Singh');
 
   return NextResponse.json({
     success: true,
