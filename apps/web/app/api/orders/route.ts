@@ -11,21 +11,32 @@ import { resolveAppName } from '@/lib/utils/resolveApp';
 const CreateOrderSchema = z.object({
   amount: z.number().positive().multipleOf(0.01),
   currency: z.string().length(3).default('INR'),
-  description: z.string().max(255).optional(),
-  businessName: z.string().max(100).optional(),
-  appName: z.string().max(100).optional(),
-  customerName: z.string().max(100).optional(),
-  customerEmail: z.string().email().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
-  customerPhone: z.string().regex(/^[6-9]\d{9}$/).optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
-  metadata: z.record(z.unknown()).optional(),
-  returnUrl: z.string().url().optional(),
-  webhookUrl: z.string().url().optional(),
+  description: z.string().max(255).nullish(),
+  businessName: z.string().max(100).nullish(),
+  appName: z.string().max(100).nullish(),
+  customerName: z.string().max(100).nullish(),
+  customerEmail: z
+    .string()
+    .email()
+    .or(z.literal(''))
+    .nullish()
+    .transform((val) => (!val ? undefined : val)),
+  customerPhone: z
+    .string()
+    .regex(/^[6-9]\d{9}$/)
+    .or(z.literal(''))
+    .nullish()
+    .transform((val) => (!val ? undefined : val)),
+  metadata: z.record(z.unknown()).nullish(),
+  returnUrl: z.string().url().or(z.literal('')).nullish(),
+  webhookUrl: z.string().url().or(z.literal('')).nullish(),
 });
 
 export async function POST(request: NextRequest) {
-  // Auth: require internal API key (for now — server-to-server call from Ayurdhara site)
-  const apiKey = request.headers.get('X-API-Key');
-  if (!apiKey || apiKey !== process.env.INTERNAL_API_KEY) {
+  // Auth: require internal API key
+  const apiKey = request.headers.get('X-API-Key') ?? request.headers.get('Authorization')?.replace('Bearer ', '');
+  const validKey = process.env.INTERNAL_API_KEY || process.env.STARPAY_INTERNAL_API_KEY;
+  if (!apiKey || (validKey && apiKey !== validKey)) {
     return NextResponse.json(
       { success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid API key' } },
       { status: 401 }
