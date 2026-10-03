@@ -12,7 +12,7 @@ class GenericSmsParser @Inject constructor() : BankParser {
     
     companion object {
         private val AMOUNT_REGEX = Regex("(?i)(?:Rs\\.?|INR)\\s*([\\d,]+\\.?\\d*)")
-        private val REF_REGEX = Regex("(?i)(?:Ref|UPI|UTR)(?:\\s*(?:no|id|ref|number)?[\\s:-]*)([A-Za-z0-9]{6,20})")
+        private val REF_REGEX = Regex("(?i)(?:Ref|UPI|UTR)[\\s/:-]*(?:no|id|ref|number|cr|dr)?[\\s/:-]*([A-Za-z0-9]{6,22})")
     }
 
     override fun parse(sender: String, message: String, timestamp: Long): ParseResult {

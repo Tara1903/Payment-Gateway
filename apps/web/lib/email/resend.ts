@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 import { appendAuditLog } from '@/lib/audit/logger';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? 'noreply@ayurdhara.in';
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? 'noreply@starpay.com';
 
 export interface SendEmailOptions {
   to: string | string[];

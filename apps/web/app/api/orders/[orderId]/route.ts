@@ -53,7 +53,7 @@ export async function GET(
   }
 
   const meta = (order.metadata as Record<string, unknown>) ?? {};
-  const businessName = (meta.businessName as string) || (meta.merchantName as string) || (meta.appName as string) || process.env.MERCHANT_NAME || 'Merchant';
+  const businessName = (meta.businessName as string) || (meta.merchantName as string) || (meta.appName as string) || process.env.MERCHANT_NAME || 'Hari Singh';
 
   return NextResponse.json({
     success: true,

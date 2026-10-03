@@ -157,7 +157,7 @@ export default function SettingsPage() {
                 value={merchant?.name || ''}
                 onChange={(e) => setMerchant({ ...merchant, name: e.target.value })}
                 className="input-field"
-                placeholder="e.g. Ayurdhara"
+                placeholder="e.g. Hari Singh"
                 required
               />
             </div>
@@ -169,7 +169,7 @@ export default function SettingsPage() {
                 value={merchant?.upi_id || ''}
                 onChange={(e) => setMerchant({ ...merchant, upi_id: e.target.value })}
                 className="input-field"
-                placeholder="e.g. ayurdhara@upi"
+                placeholder="e.g. 9630937033@sbi"
                 required
               />
               <p className="text-xs text-slate-500">This exact UPI ID will be encoded into all customer checkout QR codes.</p>

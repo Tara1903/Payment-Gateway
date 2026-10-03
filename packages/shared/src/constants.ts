@@ -2,9 +2,9 @@ export const MERCHANT = {
   /** Used as prefix for order references */
   ORDER_REF_PREFIX: 'AYU',
   /** UPI ID of the merchant */
-  UPI_ID: process.env['MERCHANT_UPI_ID'] ?? 'ayurdhara@upi',
+  UPI_ID: process.env['MERCHANT_UPI_ID'] ?? '9630937033@sbi',
   /** Display name */
-  NAME: 'Ayurdhara',
+  NAME: process.env['MERCHANT_NAME'] ?? 'Hari Singh',
 } as const;
 
 export const ORDER_TIMEOUTS = {

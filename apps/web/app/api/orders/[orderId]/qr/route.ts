@@ -30,7 +30,7 @@ export async function GET(
   const supabase = createAdminClient();
   const { data: order, error } = await supabase
     .from('orders')
-    .select('id, reserved_amount, description, status, upi_txn_ref, expires_at, metadata')
+    .select('id, merchant_id, reserved_amount, description, status, upi_txn_ref, expires_at, metadata')
     .eq('id', orderId)
     .single();
 
@@ -55,9 +55,20 @@ export async function GET(
     );
   }
 
+  // Fetch active merchant from DB
+  let merchantQuery = supabase.from('merchants').select('name, upi_id');
+  if (order.merchant_id) {
+    merchantQuery = merchantQuery.eq('id', order.merchant_id);
+  } else {
+    merchantQuery = merchantQuery.eq('is_active', true);
+  }
+  const { data: merchant } = await merchantQuery.single();
+
   const meta = (order.metadata as Record<string, unknown>) ?? {};
-  const businessName = (meta.businessName as string) || (meta.merchantName as string) || (meta.appName as string) || process.env.MERCHANT_NAME || 'Ayurdhara';
-  const merchantUpiId = process.env.MERCHANT_UPI_ID ?? 'ayurdhara@upi';
+  const clientBusinessName = (meta.businessName as string) || (meta.merchantName as string) || (meta.appName as string);
+  const defaultMerchantName = merchant?.name || process.env.MERCHANT_NAME || 'Hari Singh';
+  const businessName = clientBusinessName || defaultMerchantName;
+  const merchantUpiId = merchant?.upi_id || process.env.MERCHANT_UPI_ID || '9630937033@sbi';
 
   const upiUrl = buildUpiUrl({
     amount: order.reserved_amount,

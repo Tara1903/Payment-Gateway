@@ -60,5 +60,5 @@ export function resolveAppName(source: AppIdentitySource): string {
   }
 
   // 5. Default merchant fallback
-  return 'StarPay / Ayurdhara';
+  return 'StarPay Direct';
 }

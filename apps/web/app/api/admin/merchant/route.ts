@@ -10,8 +10,19 @@ const UpdateMerchantSchema = z.object({
   bank_ifsc: z.string().optional(),
 });
 
-export async function GET() {
-  const auth = await requireAdminRole('READ_ONLY');
+async function verifyAdminOrApiKey(request: NextRequest, minimumRole: 'READ_ONLY' | 'SUPER_ADMIN') {
+  const apiKey = request.headers.get('X-API-Key') ?? request.headers.get('authorization')?.replace('Bearer ', '');
+  const validKey = process.env.STARPAY_INTERNAL_API_KEY || process.env.INTERNAL_API_KEY;
+  if (apiKey && validKey && apiKey === validKey) {
+    return { ok: true };
+  }
+  const auth = await requireAdminRole(minimumRole);
+  if (!auth.ok) return { ok: false, response: auth.response };
+  return { ok: true };
+}
+
+export async function GET(request: NextRequest) {
+  const auth = await verifyAdminOrApiKey(request, 'READ_ONLY');
   if (!auth.ok) return auth.response;
 
   const supabase = createAdminClient();
@@ -32,7 +43,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
-  const auth = await requireAdminRole('SUPER_ADMIN');
+  const auth = await verifyAdminOrApiKey(request, 'SUPER_ADMIN');
   if (!auth.ok) return auth.response;
 
   try {

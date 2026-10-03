@@ -277,7 +277,7 @@ export default async function AppsPage() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-emerald-400">✓</span>
-                <span><strong>Unified Settlement:</strong> All customer payments route straight to your primary merchant UPI ID (<code className="text-slate-300">ayurdhara@upi</code>).</span>
+                <span><strong>Unified Settlement:</strong> All customer payments route straight to your primary merchant UPI ID (<code className="text-slate-300">9630937033@sbi</code>).</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-emerald-400">✓</span>

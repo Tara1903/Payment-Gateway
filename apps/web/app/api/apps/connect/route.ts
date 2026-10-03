@@ -52,8 +52,8 @@ export async function POST(request: NextRequest) {
     success: true,
     message: `App '${canonicalName}' is connected to StarPay Payment Gateway.`,
     gateway: {
-      name: merchant?.name ?? 'StarPay',
-      upiId: merchant?.upi_id ?? 'ayurdhara@upi',
+      name: merchant?.name ?? process.env.MERCHANT_NAME ?? 'Hari Singh',
+      upiId: merchant?.upi_id ?? process.env.MERCHANT_UPI_ID ?? '9630937033@sbi',
       status: 'active',
       endpoints: {
         createOrder: '/api/orders',

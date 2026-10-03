@@ -1,7 +1,7 @@
 import QRCode from 'qrcode';
 
-const MERCHANT_UPI_ID = process.env.MERCHANT_UPI_ID ?? 'ayurdhara@upi';
-const MERCHANT_NAME = 'Ayurdhara';
+const MERCHANT_UPI_ID = process.env.MERCHANT_UPI_ID ?? '9630937033@sbi';
+const MERCHANT_NAME = process.env.MERCHANT_NAME ?? 'Hari Singh';
 
 /**
  * Build a UPI payment URL (used for QR + intent link)
