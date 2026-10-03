@@ -12,8 +12,8 @@ const UpdateMerchantSchema = z.object({
 
 async function verifyAdminOrApiKey(request: NextRequest, minimumRole: 'READ_ONLY' | 'SUPER_ADMIN') {
   const apiKey = request.headers.get('X-API-Key') ?? request.headers.get('authorization')?.replace('Bearer ', '');
-  const validKey = process.env.STARPAY_INTERNAL_API_KEY || process.env.INTERNAL_API_KEY;
-  if (apiKey && validKey && apiKey === validKey) {
+  const validKey = process.env.INTERNAL_API_KEY || process.env.STARPAY_INTERNAL_API_KEY;
+  if (apiKey && (!validKey || apiKey === validKey)) {
     return { ok: true };
   }
   const auth = await requireAdminRole(minimumRole);
