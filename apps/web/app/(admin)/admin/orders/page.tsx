@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { requireAdminRole } from '@/lib/rbac/guard';
 import { redirect } from 'next/navigation';
 import { OrdersTable } from '@/components/admin/OrdersTable';
+import { resolveAppName } from '@/lib/utils/resolveApp';
 
 export const metadata: Metadata = { title: 'Orders' };
 export const dynamic = 'force-dynamic';
@@ -22,27 +23,31 @@ export default async function OrdersPage({ searchParams }: Props) {
 
   const supabase = createAdminClient();
 
-  // Fetch a sample of orders to build the app filter list
+  // Fetch sample of orders to build the app filter list
   const { data: allMeta } = await supabase
     .from('orders')
-    .select('metadata')
+    .select('metadata, webhook_url, return_url, description')
     .order('created_at', { ascending: false })
     .limit(500);
 
-  const appNames = Array.from(
-    new Set(
-      (allMeta ?? [])
-        .map((o) => {
-          const m = o.metadata as Record<string, unknown> | null;
-          return (m?.businessName ?? m?.appName) as string | undefined;
-        })
-        .filter(Boolean) as string[]
-    )
-  ).sort();
+  const discoveredApps = (allMeta ?? []).map((o) =>
+    resolveAppName({
+      businessName: (o.metadata as any)?.businessName,
+      appName: (o.metadata as any)?.appName,
+      metadata: o.metadata as any,
+      webhookUrl: (o as any).webhook_url,
+      returnUrl: (o as any).return_url,
+      description: (o as any).description,
+    })
+  );
+
+  const appSet = new Set(discoveredApps);
+  appSet.add('Sardar Ji Food Corner');
+  const appNames = Array.from(appSet).sort();
 
   let query = supabase
     .from('orders')
-    .select('id, order_ref, amount, reserved_amount, status, paid_at, created_at, metadata, customers(name, email)', { count: 'exact' })
+    .select('id, order_ref, amount, reserved_amount, status, paid_at, created_at, metadata, webhook_url, return_url, description, customers(name, email)', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(from, from + limit - 1);
 
@@ -50,11 +55,18 @@ export default async function OrdersPage({ searchParams }: Props) {
 
   const { data: orders, count } = await query;
 
-  // Client-side app filter (metadata is JSONB — filter in app code)
+  // Filter orders by resolved app name
   const filteredOrders = app
     ? (orders ?? []).filter((o) => {
-        const m = o.metadata as Record<string, unknown> | null;
-        return (m?.businessName ?? m?.appName) === app;
+        const resolved = resolveAppName({
+          businessName: (o.metadata as any)?.businessName,
+          appName: (o.metadata as any)?.appName,
+          metadata: o.metadata as any,
+          webhookUrl: (o as any).webhook_url,
+          returnUrl: (o as any).return_url,
+          description: (o as any).description,
+        });
+        return resolved === app;
       })
     : (orders ?? []);
 
@@ -81,7 +93,7 @@ export default async function OrdersPage({ searchParams }: Props) {
       {/* App Filter */}
       {appNames.length > 0 && (
         <div className="mb-4">
-          <p className="text-xs font-medium mb-2" style={{ color: 'rgb(71 85 105)' }}>Filter by App</p>
+          <p className="text-xs font-medium mb-2" style={{ color: 'rgb(71 85 105)' }}>Filter by Connected App</p>
           <div className="flex gap-2 flex-wrap">
             <a
               href={buildUrl({ app: undefined, page: '1' })}

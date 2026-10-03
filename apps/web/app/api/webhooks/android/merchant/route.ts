@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { verifyWebhookSignature } from '@/lib/crypto/webhook';
 import { z } from 'zod';
+import { resolveAppName } from '@/lib/utils/resolveApp';
 
 const UpdateMerchantSchema = z.object({
   upi_id: z.string().min(1).optional(),
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
   // Discover connected client apps from orders
   const { data: recentOrders } = await auth.supabase!
     .from('orders')
-    .select('metadata, webhook_url, created_at, status')
+    .select('metadata, webhook_url, return_url, description, created_at, status')
     .order('created_at', { ascending: false })
     .limit(200);
 
@@ -87,20 +88,24 @@ export async function GET(request: NextRequest) {
   if (recentOrders && recentOrders.length > 0) {
     for (const order of recentOrders) {
       const meta = (order.metadata as Record<string, unknown>) ?? {};
-      const appName = 
-        (meta.businessName as string) || 
-        (meta.appName as string) || 
-        (meta.merchantName as string) || 
-        (order.webhook_url ? new URL(order.webhook_url).hostname : null) || 
-        'Default App';
+      const appName = resolveAppName({
+        businessName: meta.businessName as string,
+        appName: meta.appName as string,
+        metadata: meta,
+        webhookUrl: (order as any).webhook_url,
+        returnUrl: (order as any).return_url,
+        description: (order as any).description,
+      });
 
+      const webhook = (order as any).webhook_url || (meta.webhookUrl as string) || (meta.webhook_url as string) || undefined;
       const existing = appsMap.get(appName);
       if (existing) {
         existing.totalOrders += 1;
+        if (webhook && !existing.webhookUrl) existing.webhookUrl = webhook;
       } else {
         appsMap.set(appName, {
           name: appName,
-          webhookUrl: order.webhook_url || undefined,
+          webhookUrl: webhook,
           totalOrders: 1,
           lastActive: order.created_at,
           status: 'Active',
@@ -109,10 +114,11 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Ensure default merchant is listed if no orders yet
-  if (appsMap.size === 0 && merchantData?.name) {
-    appsMap.set(merchantData.name, {
-      name: merchantData.name,
+  // Ensure default apps like Sardar Ji are registered
+  if (!appsMap.has('Sardar Ji Food Corner')) {
+    appsMap.set('Sardar Ji Food Corner', {
+      name: 'Sardar Ji Food Corner',
+      webhookUrl: 'https://sardar-ji.vercel.app/api/starpay/webhook',
       totalOrders: 0,
       lastActive: new Date().toISOString(),
       status: 'Active',

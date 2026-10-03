@@ -6,6 +6,7 @@ import { generateUpiTxnRef } from '@/lib/upi';
 import { appendTimeline } from '@/lib/timeline/logger';
 import { appendAuditLog } from '@/lib/audit/logger';
 import { MERCHANT } from '@starpay/shared';
+import { resolveAppName } from '@/lib/utils/resolveApp';
 
 const CreateOrderSchema = z.object({
   amount: z.number().positive().multipleOf(0.01),
@@ -48,10 +49,20 @@ export async function POST(request: NextRequest) {
   }
 
   const { amount, currency, description, businessName, appName, customerName, customerEmail, customerPhone, metadata, returnUrl, webhookUrl } = parsed.data;
-  const effectiveBusinessName = businessName || appName || (metadata?.businessName as string) || (metadata?.appName as string) || undefined;
+  const effectiveBusinessName = resolveAppName({
+    businessName,
+    appName,
+    metadata,
+    webhookUrl,
+    returnUrl,
+    description,
+  });
   const finalMetadata = {
     ...(metadata ?? {}),
-    ...(effectiveBusinessName ? { businessName: effectiveBusinessName } : {}),
+    businessName: effectiveBusinessName,
+    appName: effectiveBusinessName,
+    webhookUrl: webhookUrl ?? metadata?.webhookUrl ?? null,
+    returnUrl: returnUrl ?? metadata?.returnUrl ?? null,
   };
 
   const supabase = createAdminClient();

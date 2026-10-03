@@ -1,4 +1,5 @@
 import { formatCurrency, formatDateTime } from '@starpay/shared';
+import { resolveAppName } from '@/lib/utils/resolveApp';
 
 type OrderStatus = 'CREATED' | 'AWAITING_PAYMENT' | 'VERIFYING' | 'PAID' | 'PENDING_VERIFICATION' | 'FAILED' | 'REFUNDED';
 
@@ -22,6 +23,9 @@ interface Order {
   status: OrderStatus;
   paid_at: string | null;
   created_at: string;
+  description?: string | null;
+  webhook_url?: string | null;
+  return_url?: string | null;
   metadata?: Record<string, unknown> | null;
   // Supabase join returns array for customers even on many-to-one; accept both
   customers: CustomerLike | CustomerLike[] | null;
@@ -31,11 +35,6 @@ function resolveCustomer(customers: Order['customers']): CustomerLike | null {
   if (!customers) return null;
   if (Array.isArray(customers)) return customers[0] ?? null;
   return customers;
-}
-
-function resolveAppName(metadata: Record<string, unknown> | null | undefined): string {
-  if (!metadata) return '—';
-  return (metadata.businessName ?? metadata.appName) as string || '—';
 }
 
 export function OrdersTable({ orders }: { orders: Order[] }) {
@@ -62,7 +61,14 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
             {orders.map((order, idx) => {
               const style = STATUS_STYLES[order.status];
               const customer = resolveCustomer(order.customers);
-              const appName = resolveAppName(order.metadata);
+              const appName = resolveAppName({
+                businessName: order.metadata?.businessName as string,
+                appName: order.metadata?.appName as string,
+                metadata: order.metadata,
+                webhookUrl: order.webhook_url,
+                returnUrl: order.return_url,
+                description: order.description,
+              });
               return (
                 <tr
                   key={order.id}
@@ -74,16 +80,12 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
                     </a>
                   </td>
                   <td className="px-4 py-3">
-                    {appName !== '—' ? (
-                      <span
-                        className="px-2 py-0.5 rounded-full text-xs font-medium"
-                        style={{ background: 'rgb(139 92 246 / 0.1)', color: 'rgb(167 139 250)' }}
-                      >
-                        {appName}
-                      </span>
-                    ) : (
-                      <span style={{ color: 'rgb(71 85 105)', fontSize: '0.75rem' }}>—</span>
-                    )}
+                    <span
+                      className="px-2 py-0.5 rounded-full text-xs font-medium"
+                      style={{ background: 'rgb(139 92 246 / 0.1)', color: 'rgb(167 139 250)' }}
+                    >
+                      {appName}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <p className="text-sm" style={{ color: 'rgb(248 250 252)' }}>{customer?.name ?? 'Guest'}</p>

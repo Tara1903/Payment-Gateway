@@ -4,6 +4,7 @@ import { requireAdminRole } from '@/lib/rbac/guard';
 import { notFound, redirect } from 'next/navigation';
 import { formatCurrency, formatDateTime } from '@starpay/shared';
 import { VerificationTimeline } from '@/components/timeline/VerificationTimeline';
+import { resolveAppName } from '@/lib/utils/resolveApp';
 
 export const metadata: Metadata = { title: 'Order Detail' };
 export const dynamic = 'force-dynamic';
@@ -76,10 +77,14 @@ export default async function OrderDetailPage({ params }: Props) {
                 { label: 'Expires At', value: order.expires_at ? formatDateTime(order.expires_at) : '—' },
                 {
                   label: 'Source App',
-                  value: (() => {
-                    const m = order.metadata as Record<string, unknown> | null;
-                    return (m?.businessName ?? m?.appName) as string || '—';
-                  })(),
+                  value: resolveAppName({
+                    businessName: (order.metadata as any)?.businessName,
+                    appName: (order.metadata as any)?.appName,
+                    metadata: order.metadata,
+                    webhookUrl: (order as any).webhook_url,
+                    returnUrl: (order as any).return_url,
+                    description: order.description,
+                  }),
                 },
               ] as { label: string; value: string }[]).map(({ label, value }) => (
                 <div key={label}>
