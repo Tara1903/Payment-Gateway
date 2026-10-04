@@ -92,18 +92,44 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 2. Upsert customer
+  // 2. Resolve or create customer
   let customerId: string | null = null;
   if (customerEmail || customerPhone) {
-    const { data: customer } = await supabase
-      .from('customers')
-      .upsert(
-        { name: customerName ?? null, email: customerEmail ?? null, phone: customerPhone ?? null },
-        { onConflict: 'email', ignoreDuplicates: false }
-      )
-      .select('id')
-      .single();
-    customerId = customer?.id ?? null;
+    if (customerEmail) {
+      const { data: existingCustomer } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('email', customerEmail)
+        .limit(1)
+        .maybeSingle();
+
+      if (existingCustomer) {
+        customerId = existingCustomer.id;
+        if (customerName || customerPhone) {
+          await supabase
+            .from('customers')
+            .update({
+              ...(customerName ? { name: customerName } : {}),
+              ...(customerPhone ? { phone: customerPhone } : {}),
+            })
+            .eq('id', customerId);
+        }
+      } else {
+        const { data: newCustomer } = await supabase
+          .from('customers')
+          .insert({ name: customerName ?? null, email: customerEmail ?? null, phone: customerPhone ?? null })
+          .select('id')
+          .single();
+        customerId = newCustomer?.id ?? null;
+      }
+    } else {
+      const { data: newCustomer } = await supabase
+        .from('customers')
+        .insert({ name: customerName ?? null, email: null, phone: customerPhone ?? null })
+        .select('id')
+        .single();
+      customerId = newCustomer?.id ?? null;
+    }
   }
 
   // 3. Reserve unique amount (DB function handles collision retry)
