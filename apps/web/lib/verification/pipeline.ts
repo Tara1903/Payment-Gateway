@@ -6,6 +6,8 @@ import { checkAmountMatch } from './steps/amountMatch';
 import { checkTimeWindow } from './steps/timeWindow';
 import { checkUtrUniqueness } from './steps/utrUniqueness';
 import { checkFraudRules } from './steps/fraudRules';
+import { sendPaymentApprovedNotifications } from '@/lib/notifications/orderPaid';
+import { sendOrderWebhook } from '@/lib/notifications/webhook';
 
 export interface PipelineInput {
   rawPayload: Record<string, unknown>;
@@ -147,32 +149,29 @@ async function approveOrder(
     payload: { transactionId, utr: parsed.utr, amount: parsed.amount, paidAt },
   });
 
-  // Trigger post-payment notifications (invoice + email) — fire and forget
-  import('@/lib/notifications/orderPaid').then(({ sendPaymentApprovedNotifications }) => {
+  // Trigger post-payment notifications (invoice + email) and client webhook
+  const postTasks: Promise<unknown>[] = [
     sendPaymentApprovedNotifications(orderId).catch((err: unknown) => {
       console.error('[Pipeline] Notification error:', err);
-    });
-  }).catch((err: unknown) => {
-    console.error('[Pipeline] Failed to import notifications:', err);
-  });
+    }),
+  ];
 
-  // Trigger external webhook if configured
   if (webhookUrl) {
-    import('@/lib/notifications/webhook').then(({ sendOrderWebhook }) => {
+    postTasks.push(
       sendOrderWebhook(orderId, webhookUrl, {
         orderId,
         amount: parsed.amount,
         utr: parsed.utr,
         status: 'PAID',
         paidAt,
-        metadata
+        metadata,
       }).catch((err: unknown) => {
         console.error('[Pipeline] Webhook error:', err);
-      });
-    }).catch((err: unknown) => {
-      console.error('[Pipeline] Failed to import webhook module:', err);
-    });
+      })
+    );
   }
+
+  await Promise.allSettled(postTasks);
 }
 
 async function triggerFallback(
