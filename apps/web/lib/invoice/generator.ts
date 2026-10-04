@@ -8,7 +8,9 @@ import { resolveAppName } from '@/lib/utils/resolveApp';
  */
 function generateInvoiceNumber(sequence: number): string {
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  return `INV-${date}-${sequence.toString().padStart(4, '0')}`;
+  const seq = sequence.toString().padStart(4, '0');
+  const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `INV-${date}-${seq}-${rand}`;
 }
 
 /**
@@ -148,8 +150,13 @@ export async function generateInvoice(orderId: string): Promise<GenerateInvoiceR
   }
 
   // 2. Get sequence for invoice number
-  const { data: seqData } = await supabase.rpc('next_order_sequence');
-  const sequence = Number(seqData ?? 1);
+  let sequence = 1;
+  try {
+    const { data: seqData } = await supabase.rpc('next_order_sequence');
+    if (seqData) sequence = Number(seqData);
+  } catch {
+    sequence = Math.floor(1 + Math.random() * 9999);
+  }
   const invoiceNumber = generateInvoiceNumber(sequence);
 
   const meta = (order.metadata as Record<string, unknown>) ?? {};
