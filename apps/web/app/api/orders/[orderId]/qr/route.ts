@@ -75,6 +75,7 @@ export async function GET(
   });
   const defaultMerchantName = merchant?.name || process.env.MERCHANT_NAME || 'Hari Singh';
   const businessName = (resolvedApp && resolvedApp !== 'StarPay Direct') ? resolvedApp : defaultMerchantName;
+  const beneficiaryName = (meta.accountHolderName as string) || businessName;
   const customUpiId = (meta.upiId as string) || (meta.merchantUpiId as string) || (meta.vpa as string);
   const merchantUpiId = customUpiId || merchant?.upi_id || process.env.MERCHANT_UPI_ID || '9630937033@sbi';
 
@@ -83,7 +84,7 @@ export async function GET(
     txnRef: order.upi_txn_ref ?? orderId.slice(0, 12),
     description: order.description ?? `Payment to ${businessName}`,
     upiId: merchantUpiId,
-    merchantName: businessName,
+    merchantName: beneficiaryName,
   });
 
   const [qrDataUrl] = await Promise.all([

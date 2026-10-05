@@ -7,6 +7,7 @@ import { appendTimeline } from '@/lib/timeline/logger';
 import { appendAuditLog } from '@/lib/audit/logger';
 import { MERCHANT } from '@starpay/shared';
 import { resolveAppName } from '@/lib/utils/resolveApp';
+import { getClientAppByNameOrKey } from '@/lib/apps/manager';
 
 const CreateOrderSchema = z.object({
   amount: z.number().positive().multipleOf(0.01),
@@ -33,12 +34,15 @@ const CreateOrderSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  // Auth: require internal API key
+  // Auth: accept platform master API key OR any registered client app API key
   const apiKey = request.headers.get('X-API-Key') ?? request.headers.get('Authorization')?.replace('Bearer ', '');
   const validKey = process.env.INTERNAL_API_KEY || process.env.STARPAY_INTERNAL_API_KEY;
-  if (!apiKey || (validKey && apiKey !== validKey)) {
+  const isMasterKey = Boolean(apiKey && validKey && apiKey === validKey);
+  const matchedAppByKey = apiKey ? await getClientAppByNameOrKey(apiKey) : null;
+
+  if (!isMasterKey && !matchedAppByKey) {
     return NextResponse.json(
-      { success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid API key' } },
+      { success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid or missing API key' } },
       { status: 401 }
     );
   }
@@ -60,7 +64,11 @@ export async function POST(request: NextRequest) {
   }
 
   const { amount, currency, description, businessName, appName, customerName, customerEmail, customerPhone, metadata, returnUrl, webhookUrl } = parsed.data;
-  const effectiveBusinessName = resolveAppName({
+
+  // Resolve client app (by API key, businessName, or appName)
+  const clientApp = matchedAppByKey || (await getClientAppByNameOrKey(businessName || appName || ''));
+
+  const effectiveBusinessName = clientApp?.name || resolveAppName({
     businessName,
     appName,
     metadata,
@@ -68,12 +76,25 @@ export async function POST(request: NextRequest) {
     returnUrl,
     description,
   });
+
+  const appUpiId = clientApp?.upiId || (metadata?.upiId as string) || (metadata?.merchantUpiId as string);
+  const appBeneficiary = clientApp?.accountHolderName || (metadata?.accountHolderName as string);
+  const appBankName = clientApp?.bankName || (metadata?.bankName as string);
+  const appAccount = clientApp?.accountNumber || (metadata?.accountNumber as string);
+  const appIfsc = clientApp?.bankIfsc || (metadata?.bankIfsc as string);
+
   const finalMetadata = {
     ...(metadata ?? {}),
     businessName: effectiveBusinessName,
     appName: effectiveBusinessName,
-    webhookUrl: webhookUrl ?? metadata?.webhookUrl ?? null,
-    returnUrl: returnUrl ?? metadata?.returnUrl ?? null,
+    appId: clientApp?.id ?? null,
+    upiId: appUpiId ?? null,
+    accountHolderName: appBeneficiary ?? null,
+    bankName: appBankName ?? null,
+    accountNumber: appAccount ?? null,
+    bankIfsc: appIfsc ?? null,
+    webhookUrl: webhookUrl ?? clientApp?.webhookUrl ?? metadata?.webhookUrl ?? null,
+    returnUrl: returnUrl ?? clientApp?.returnUrl ?? metadata?.returnUrl ?? null,
   };
 
   const supabase = createAdminClient();
