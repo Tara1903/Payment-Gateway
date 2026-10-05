@@ -23,8 +23,8 @@ export default async function DevicesPage() {
     .order('created_at', { ascending: false });
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-8" style={{ color: 'rgb(248 250 252)' }}>Android Devices</h1>
+    <div className="p-4 sm:p-6 md:p-8">
+      <h1 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8" style={{ color: 'rgb(248 250 252)' }}>Android Devices</h1>
 
       {!devices?.length ? (
         <div className="card p-12 text-center">

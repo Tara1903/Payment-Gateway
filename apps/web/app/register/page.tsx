@@ -85,7 +85,7 @@ export default function RegisterPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4 py-12"
+      className="min-h-screen flex items-center justify-center p-3.5 sm:p-4 py-8 sm:py-12"
       style={{ background: 'rgb(2 6 23)' }}
     >
       {/* Background glow */}
@@ -97,7 +97,7 @@ export default function RegisterPage() {
         }}
       />
 
-      <div className="card p-8 w-full max-w-lg relative z-10 border border-slate-800 shadow-2xl rounded-2xl bg-slate-900/90">
+      <div className="card p-5 sm:p-8 w-full max-w-lg relative z-10 border border-slate-800 shadow-2xl rounded-2xl bg-slate-900/90">
         {/* Header */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center gradient-brand mb-4 glow-brand shadow-lg">

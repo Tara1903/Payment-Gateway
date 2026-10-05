@@ -104,7 +104,7 @@ function AuthForm() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4 py-12"
+      className="min-h-screen flex items-center justify-center p-3.5 sm:p-4 py-8 sm:py-12"
       style={{ background: 'rgb(2 6 23)' }}
     >
       {/* Background glow */}
@@ -117,7 +117,7 @@ function AuthForm() {
       />
 
       <div
-        className={`card p-8 w-full ${
+        className={`card p-5 sm:p-8 w-full ${
           mode === 'register' ? 'max-w-lg' : 'max-w-sm'
         } relative z-10 transition-all duration-200 border border-slate-800 shadow-2xl rounded-2xl bg-slate-900/90`}
       >

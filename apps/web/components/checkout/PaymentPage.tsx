@@ -166,17 +166,17 @@ export function PaymentPage({ orderId, token }: Props) {
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-8">
+      <main className="max-w-lg mx-auto px-4 py-5 sm:py-8 pb-28 sm:pb-12">
         {/* Amount Display */}
-        <div className="text-center mb-8">
-          <p className="text-sm mb-1" style={{ color: 'rgb(148 163 184)' }}>Amount to Pay</p>
-          <p className="text-5xl font-bold" style={{ color: 'rgb(248 250 252)' }}>
+        <div className="text-center mb-6 sm:mb-8">
+          <p className="text-xs sm:text-sm mb-1" style={{ color: 'rgb(148 163 184)' }}>Amount to Pay</p>
+          <p className="text-4xl sm:text-5xl font-bold tracking-tight" style={{ color: 'rgb(248 250 252)' }}>
             ₹<span className="font-mono">{order.reservedAmount.toFixed(2)}</span>
           </p>
           {order.description && (
-            <p className="text-sm mt-2" style={{ color: 'rgb(148 163 184)' }}>{order.description}</p>
+            <p className="text-xs sm:text-sm mt-1.5 text-slate-300">{order.description}</p>
           )}
-          <p className="text-xs mt-1 font-mono" style={{ color: 'rgb(71 85 105)' }}>Ref: {order.orderRef}</p>
+          <p className="text-[11px] sm:text-xs mt-1 font-mono" style={{ color: 'rgb(71 85 105)' }}>Ref: {order.orderRef}</p>
         </div>
 
         {isVerifying && (

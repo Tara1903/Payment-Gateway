@@ -26,9 +26,9 @@ export default async function AuditPage() {
   };
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-2" style={{ color: 'rgb(248 250 252)' }}>Audit Log</h1>
-      <p className="text-sm mb-8" style={{ color: 'rgb(100 116 139)' }}>Immutable system audit trail — last 100 entries</p>
+    <div className="p-4 sm:p-6 md:p-8">
+      <h1 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2" style={{ color: 'rgb(248 250 252)' }}>Audit Log</h1>
+      <p className="text-xs sm:text-sm mb-6 sm:mb-8" style={{ color: 'rgb(100 116 139)' }}>Immutable system audit trail — last 100 entries</p>
 
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">

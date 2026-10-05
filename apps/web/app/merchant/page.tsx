@@ -253,44 +253,44 @@ export default function MerchantPortalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10 font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-3.5 sm:p-6 md:p-10 font-sans pb-24 md:pb-12">
       {/* Top Navigation */}
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between pb-8 mb-8 border-b border-slate-800 gap-4">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between pb-6 mb-6 sm:mb-8 border-b border-slate-800 gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">⚡</span>
-            <h1 className="text-2xl font-bold tracking-tight text-white">Merchant & App Portal</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <span className="text-xl sm:text-2xl">⚡</span>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">Merchant & App Portal</h1>
+            <span className="px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
               Multi-App Gateway
             </span>
           </div>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Configure per-app bank accounts, retrieve integration API keys, and monitor payments.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           {userEmail && (
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300">
               <span className="text-violet-400">👤</span>
-              <span className="font-mono">{userEmail}</span>
+              <span className="font-mono text-[11px] truncate max-w-[140px]">{userEmail}</span>
             </div>
           )}
           <button
             onClick={() => setCreatingApp(true)}
-            className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition shadow-sm"
+            className="flex-1 sm:flex-none px-3.5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs sm:text-sm font-medium transition shadow-sm active:scale-95"
           >
             + Register New App
           </button>
           <Link
             href="/admin/apps"
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium transition"
+            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs sm:text-sm font-medium transition"
           >
             Admin Dashboard →
           </Link>
           <button
             onClick={handleSignOut}
-            className="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-medium transition"
+            className="px-2.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-medium transition"
             title="Sign Out"
           >
             Sign Out ⎋
@@ -298,9 +298,42 @@ export default function MerchantPortalPage() {
         </div>
       </div>
 
+      {/* Mobile Horizontal App Carousel (<lg screens) */}
+      <div className="lg:hidden max-w-7xl mx-auto mb-6">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Your Apps ({apps.length})</span>
+          <button
+            onClick={() => setCreatingApp(true)}
+            className="text-xs text-violet-400 hover:text-violet-300 font-medium"
+          >
+            + New App
+          </button>
+        </div>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          {apps.map((app) => {
+            const isSelected = selectedApp?.id === app.id;
+            return (
+              <button
+                key={app.id}
+                onClick={() => handleSelectApp(app)}
+                className={`flex-shrink-0 px-3.5 py-2.5 rounded-xl border text-xs font-medium transition flex items-center gap-2 ${
+                  isSelected
+                    ? 'bg-violet-600/20 border-violet-500 text-white ring-1 ring-violet-500/40 shadow-sm'
+                    : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${app.isActive ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                <span className="font-semibold">{app.name}</span>
+                <span className="text-[10px] text-slate-500 font-mono">••••{app.accountNumber.slice(-4)}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Left Column: App Selector */}
-        <div className="lg:col-span-1 space-y-3">
+        {/* Left Column: App Selector (Desktop only) */}
+        <div className="hidden lg:block lg:col-span-1 space-y-3">
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Your Apps</h2>
           {apps.map((app) => {
             const isSelected = selectedApp?.id === app.id;
@@ -514,8 +547,10 @@ export default function MerchantPortalPage() {
 
       {/* MODAL: Edit Bank Details */}
       {editingBank && selectedApp && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 sm:p-6 w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl safe-bottom">
+            {/* Mobile Drag Indicator */}
+            <div className="sm:hidden w-12 h-1.5 bg-slate-700/80 rounded-full mx-auto mb-4" />
             <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
               <div>
                 <h3 className="font-bold text-white text-base">Configure Settlement Bank Account</h3>
@@ -615,8 +650,10 @@ export default function MerchantPortalPage() {
 
       {/* MODAL: Register New App */}
       {creatingApp && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 z-50 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 sm:p-6 w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl safe-bottom">
+            {/* Mobile Drag Indicator */}
+            <div className="sm:hidden w-12 h-1.5 bg-slate-700/80 rounded-full mx-auto mb-4" />
             <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
               <div>
                 <h3 className="font-bold text-white text-base">Register New Client Application</h3>

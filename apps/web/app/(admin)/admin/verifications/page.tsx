@@ -19,9 +19,9 @@ export default async function VerificationsPage() {
     .order('created_at', { ascending: true });
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-2" style={{ color: 'rgb(248 250 252)' }}>Manual Verifications</h1>
-      <p className="text-sm mb-8" style={{ color: 'rgb(100 116 139)' }}>{pending?.length ?? 0} pending review</p>
+    <div className="p-4 sm:p-6 md:p-8">
+      <h1 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2" style={{ color: 'rgb(248 250 252)' }}>Manual Verifications</h1>
+      <p className="text-xs sm:text-sm mb-6 sm:mb-8" style={{ color: 'rgb(100 116 139)' }}>{pending?.length ?? 0} pending review</p>
 
       {!pending?.length ? (
         <div className="card p-12 text-center">

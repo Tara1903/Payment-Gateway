@@ -96,17 +96,17 @@ export default async function DashboardPage() {
     .sort((a, b) => (b.lastActive ?? '').localeCompare(a.lastActive ?? ''));
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 md:p-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold" style={{ color: 'rgb(248 250 252)' }}>Dashboard</h1>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'rgb(248 250 252)' }}>Dashboard</h1>
         <p style={{ color: 'rgb(100 116 139)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
           {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
         </p>
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <MetricCard
           title="Today's Revenue"
           value={formatCurrency(todayRevenue)}

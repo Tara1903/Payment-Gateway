@@ -82,11 +82,11 @@ export default async function OrdersPage({ searchParams }: Props) {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 sm:p-6 md:p-8">
+      <div className="flex items-center justify-between mb-6 sm:mb-8">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'rgb(248 250 252)' }}>Orders</h1>
-          <p className="text-sm mt-1" style={{ color: 'rgb(100 116 139)' }}>{count ?? 0} total orders</p>
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'rgb(248 250 252)' }}>Orders</h1>
+          <p className="text-xs sm:text-sm mt-1" style={{ color: 'rgb(100 116 139)' }}>{count ?? 0} total orders</p>
         </div>
       </div>
 

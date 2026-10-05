@@ -10,15 +10,15 @@ interface Props {
 export default async function SuccessPage({ searchParams }: Props) {
   const { ref, amount } = await searchParams;
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'rgb(2 6 23)' }}>
-      <div className="card p-10 max-w-md w-full text-center animate-fade-in">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full mb-6 glow-success" style={{ background: 'rgb(52 211 153 / 0.15)' }}>
-          <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="rgb(52 211 153)" strokeWidth="2.5">
+    <div className="min-h-screen flex items-center justify-center p-3.5 sm:p-4" style={{ background: 'rgb(2 6 23)' }}>
+      <div className="card p-6 sm:p-10 max-w-md w-full text-center animate-fade-in border border-slate-800 shadow-2xl">
+        <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full mb-5 sm:mb-6 glow-success" style={{ background: 'rgb(52 211 153 / 0.15)' }}>
+          <svg className="w-8 h-8 sm:w-10 sm:h-10" viewBox="0 0 24 24" fill="none" stroke="rgb(52 211 153)" strokeWidth="2.5">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
-        <h1 className="text-3xl font-bold mb-2" style={{ color: 'rgb(248 250 252)' }}>Payment Successful!</h1>
-        <p style={{ color: 'rgb(148 163 184)' }} className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2 tracking-tight" style={{ color: 'rgb(248 250 252)' }}>Payment Successful!</h1>
+        <p style={{ color: 'rgb(148 163 184)' }} className="text-xs sm:text-sm mb-5 sm:mb-6">
           Your payment has been verified and confirmed.
         </p>
         {ref && (

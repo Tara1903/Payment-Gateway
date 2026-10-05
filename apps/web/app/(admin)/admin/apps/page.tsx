@@ -122,12 +122,12 @@ export default async function AppsPage() {
   combinedApps.sort((a, b) => (b.lastActive ?? '').localeCompare(a.lastActive ?? ''));
 
   return (
-    <div className="p-8 font-sans">
+    <div className="p-4 sm:p-6 md:p-8 font-sans">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-8 border-b border-slate-800 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-6 sm:mb-8 border-b border-slate-800 gap-4">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'rgb(248 250 252)' }}>Connected Apps & Bank Accounts</h1>
-          <p className="text-sm mt-1" style={{ color: 'rgb(100 116 139)' }}>
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'rgb(248 250 252)' }}>Connected Apps & Bank Accounts</h1>
+          <p className="text-xs sm:text-sm mt-1" style={{ color: 'rgb(100 116 139)' }}>
             Manage {combinedApps.length} connected client app{combinedApps.length !== 1 ? 's' : ''} with dedicated per-app settlement bank accounts and API keys.
           </p>
         </div>

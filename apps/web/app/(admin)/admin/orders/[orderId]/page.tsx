@@ -41,9 +41,9 @@ export default async function OrderDetailPage({ params }: Props) {
   const statusColor = STATUS_COLORS[order.status] ?? 'rgb(100 116 139)';
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 md:p-8">
       {/* Back link */}
-      <a href="/admin/orders" className="text-sm mb-6 inline-flex items-center gap-1" style={{ color: 'rgb(100 116 139)' }}>
+      <a href="/admin/orders" className="text-sm mb-4 sm:mb-6 inline-flex items-center gap-1" style={{ color: 'rgb(100 116 139)' }}>
         ← Orders
       </a>
 

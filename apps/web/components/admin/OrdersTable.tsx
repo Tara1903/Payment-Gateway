@@ -1,5 +1,6 @@
 import { formatCurrency, formatDateTime } from '@starpay/shared';
 import { resolveAppName } from '@/lib/utils/resolveApp';
+import Link from 'next/link';
 
 type OrderStatus = 'CREATED' | 'AWAITING_PAYMENT' | 'VERIFYING' | 'PAID' | 'PENDING_VERIFICATION' | 'FAILED' | 'REFUNDED';
 
@@ -27,7 +28,6 @@ interface Order {
   webhook_url?: string | null;
   return_url?: string | null;
   metadata?: Record<string, unknown> | null;
-  // Supabase join returns array for customers even on many-to-one; accept both
   customers: CustomerLike | CustomerLike[] | null;
 }
 
@@ -48,7 +48,70 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: 'rgb(13 17 37)', border: '1px solid rgb(255 255 255 / 0.06)' }}>
-      <div className="overflow-x-auto">
+      {/* =========================================================
+          MOBILE VIEW: Native Transaction Cards (<sm screens)
+         ========================================================= */}
+      <div className="sm:hidden divide-y divide-slate-800/80">
+        {orders.map((order) => {
+          const style = STATUS_STYLES[order.status];
+          const customer = resolveCustomer(order.customers);
+          const appName = resolveAppName({
+            businessName: order.metadata?.businessName as string,
+            appName: order.metadata?.appName as string,
+            metadata: order.metadata,
+            webhookUrl: order.webhook_url,
+            returnUrl: order.return_url,
+            description: order.description,
+          });
+
+          return (
+            <Link
+              key={order.id}
+              href={`/admin/orders/${order.id}`}
+              className="p-3.5 block hover:bg-slate-900/60 transition active:bg-slate-900"
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="font-mono text-xs font-semibold text-violet-400">
+                  {order.order_ref}
+                </span>
+                <span
+                  className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                  style={{ background: style.bg, color: style.text }}
+                >
+                  {style.label}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-slate-200 font-medium">
+                    {customer?.name || 'Guest Customer'}
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5">
+                    <span className="px-1.5 py-0.2 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20 text-[10px]">
+                      {appName}
+                    </span>
+                    <span>•</span>
+                    <span>{formatDateTime(order.created_at)}</span>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <div className="font-mono text-sm font-bold text-white">
+                    {formatCurrency(Number(order.amount))}
+                  </div>
+                  <div className="text-[10px] text-slate-500">View details →</div>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* =========================================================
+          DESKTOP VIEW: Full Data Table (sm+ screens)
+         ========================================================= */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr style={{ borderBottom: '1px solid rgb(255 255 255 / 0.06)' }}>
@@ -75,9 +138,9 @@ export function OrdersTable({ orders }: { orders: Order[] }) {
                   style={{ borderBottom: idx < orders.length - 1 ? '1px solid rgb(255 255 255 / 0.04)' : 'none' }}
                 >
                   <td className="px-4 py-3">
-                    <a href={`/admin/orders/${order.id}`} className="font-mono text-sm hover:underline" style={{ color: 'rgb(167 139 250)' }}>
+                    <Link href={`/admin/orders/${order.id}`} className="font-mono text-sm hover:underline" style={{ color: 'rgb(167 139 250)' }}>
                       {order.order_ref}
-                    </a>
+                    </Link>
                   </td>
                   <td className="px-4 py-3">
                     <span
