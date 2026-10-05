@@ -189,6 +189,7 @@ export interface UpsertAppInput {
   id?: string;
   name: string;
   slug?: string;
+  apiKey?: string;
   ownerName?: string | null;
   ownerEmail?: string | null;
   webhookUrl?: string | null;
@@ -207,9 +208,10 @@ export interface UpsertAppInput {
  * Create or update a client app with full per-app bank account setup.
  */
 export async function saveClientApp(input: UpsertAppInput): Promise<ClientApp> {
-  const slug = input.slug || input.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const existing = input.id ? await getClientAppById(input.id) : null;
+  const slug = input.slug || existing?.slug || input.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   const id = input.id || `app-${slug}-${Date.now().toString(36)}`;
-  const apiKey = `sp_live_${slug.replace(/-/g, '_')}_${crypto.randomBytes(8).toString('hex')}`;
+  const apiKey = input.apiKey || existing?.apiKey || `sp_live_${slug.replace(/-/g, '_')}_${crypto.randomBytes(8).toString('hex')}`;
 
   const appData: ClientApp = {
     id,
