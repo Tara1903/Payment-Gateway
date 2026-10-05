@@ -30,6 +30,11 @@ const nextConfig: NextConfig = {
         destination: '/admin/dashboard',
         permanent: false,
       },
+      {
+        source: '/signup',
+        destination: '/register',
+        permanent: false,
+      },
     ];
   },
 

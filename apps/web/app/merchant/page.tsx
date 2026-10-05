@@ -1,7 +1,8 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 interface ClientApp {
   id: string;
@@ -30,6 +31,8 @@ interface AppStats {
 }
 
 export default function MerchantPortalPage() {
+  const router = useRouter();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [apps, setApps] = useState<ClientApp[]>([]);
   const [selectedApp, setSelectedApp] = useState<ClientApp | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,14 +72,36 @@ export default function MerchantPortalPage() {
   const [testOrderLoading, setTestOrderLoading] = useState(false);
   const [testOrderResult, setTestOrderResult] = useState<{ checkoutUrl: string; orderRef: string; amount: number } | null>(null);
 
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/admin/login');
+    router.refresh();
+  };
+
   const fetchApps = async () => {
     try {
       setLoading(true);
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const email = user?.email || null;
+      if (email) setUserEmail(email);
+
       const res = await fetch('/api/apps');
       const json = await res.json();
       if (json.success && Array.isArray(json.data) && json.data.length > 0) {
         setApps(json.data);
-        const current = selectedApp ? json.data.find((a: ClientApp) => a.id === selectedApp.id) || json.data[0] : json.data[0];
+        
+        // Pick app: if currently selected, keep it; else if user owns an app, pick that; else first app
+        let current = json.data[0];
+        if (selectedApp) {
+          const found = json.data.find((a: ClientApp) => a.id === selectedApp.id);
+          if (found) current = found;
+        } else if (email) {
+          const owned = json.data.find((a: ClientApp) => a.ownerEmail?.toLowerCase() === email.toLowerCase());
+          if (owned) current = owned;
+        }
+
         setSelectedApp(current);
         setBankForm({
           upiId: current.upiId,
@@ -245,6 +270,12 @@ export default function MerchantPortalPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          {userEmail && (
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300">
+              <span className="text-violet-400">👤</span>
+              <span className="font-mono">{userEmail}</span>
+            </div>
+          )}
           <button
             onClick={() => setCreatingApp(true)}
             className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition shadow-sm"
@@ -257,6 +288,13 @@ export default function MerchantPortalPage() {
           >
             Admin Dashboard →
           </Link>
+          <button
+            onClick={handleSignOut}
+            className="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 rounded-lg text-xs font-medium transition"
+            title="Sign Out"
+          >
+            Sign Out ⎋
+          </button>
         </div>
       </div>
 

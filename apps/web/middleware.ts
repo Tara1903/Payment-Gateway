@@ -24,8 +24,8 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  // Protect all /admin/* routes except /admin/login
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
+  // Protect all /admin/* routes except /admin/login, and protect /merchant
+  if ((pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) || pathname.startsWith('/merchant')) {
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = '/admin/login';
@@ -34,10 +34,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Redirect logged-in users away from login page
-  if (pathname === '/admin/login' && user) {
+  // Redirect logged-in users away from login and register pages
+  if ((pathname === '/admin/login' || pathname === '/register') && user) {
     const url = request.nextUrl.clone();
-    url.pathname = '/admin/dashboard';
+    url.pathname = '/merchant';
     return NextResponse.redirect(url);
   }
 
