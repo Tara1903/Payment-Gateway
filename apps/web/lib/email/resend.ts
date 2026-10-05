@@ -1,7 +1,12 @@
 import { Resend } from 'resend';
 import { appendAuditLog } from '@/lib/audit/logger';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  return new Resend(apiKey);
+}
+
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? 'noreply@starpay.com';
 
 export interface SendEmailOptions {
@@ -14,6 +19,13 @@ export interface SendEmailOptions {
 
 export async function sendEmail(options: SendEmailOptions): Promise<{ id: string } | null> {
   const { to, subject, html, orderId, tag } = options;
+
+  const resend = getResendClient();
+  if (!resend) {
+    console.warn('[Resend] RESEND_API_KEY is not configured. Email skipped.');
+    await logNotification({ to, subject, status: 'FAILED', orderId });
+    return null;
+  }
 
   try {
     const { data, error } = await resend.emails.send({
